@@ -22,34 +22,42 @@
 // SOFTWARE.
 //
 
-// server application module
-const express = require('express')
+const SHA256 = require('crypto-js/sha256')
 
-// require extra modules
-const Block = require('./module/block.js')
+/**
+ * Use any `seed` string to find deterministic value in values
+ * @param {string} seed 
+ * @param {list} values 
+ * @returns {string} deterministic string in values by seed
+ */
+function getDeterministicValue(seed, values = ['.','-','+','o']) 
+{
+    // seed, [values] => value in values
 
-// extended features
-const bparse = require('body-parser') //https://codeforgeek.com/handle-get-post-request-express-4/
-const cookies = require('cookie-parser') //https://stackoverflow.com/questions/16209145/how-to-set-cookie-in-node-js-using-express-framework
+    //const values = ['.','-','+','o']
 
-// fs
-const ff = require('fs')
-const fs = require('fs').promises;
-const sequelize = require('sequelize')
+    // Use a cryptographic hash function for strong randomness
+    const hash = SHA256(seed.toString())
+  
+    // Convert the hash to a number (avoiding negative values)
+    const hashValue = BigInt(`0x${hash}`);
+  
+    // Use modulo to get an index within the values array range
+    const index = Number(hashValue % BigInt(values.length));
+  
+    // Return the value at the calculated index
+    return values[index];
+}
 
-// server decl
-const server = express();
-const port = 8155;
+/**
+ * rng `0 - max`
+ * @param {number} max 
+ * @returns {number} integer
+ */
+function getRandomInt(max) { return Math.floor(Math.random() * Math.floor(max)); }
 
-// db
-const Sequelize = require('sequelize')
-
-// include json
-server.use(express.json()) 
-
-// private configuration
-require("dotenv").config();
-
-
-
-let application_start = new Date();
+// export functions
+module.exports = {
+    getDeterministicValue,
+    getRandomInt
+}
