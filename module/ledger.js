@@ -23,7 +23,7 @@
 //
 
 const db = require('./db.js')
-const Block = require('./block.js')
+const blk = require('./block.js')
 
 class HybridLedger
 {
@@ -37,6 +37,57 @@ class HybridLedger
         }
     }
 
+    getValue() {
+        if (!this.ledger) { return 0 }
+        
+        // for each block ...
+        var ledgerValue = 0
+
+        for (const blk of this.ledger) {
+
+            /* common */
+
+            // GENESIS
+            if (blk.blockType == 1) { ledgerValue += blk.getValue() }
+
+            // MINTED
+            if (blk.blockType == 2) { ledgerValue += blk.getValue() }
+
+
+            /* transactions */
+
+            // TRANSACTION
+            if (blk.blockType == 3) {
+                // transaction has its own value
+                ledgerValue += blk.getValue()
+
+                // transaction data block = value spent
+                ledgerValue -= blk.data
+            }
+
+            // ACQUIREMENT
+            if (blk.blockType == 4) {
+                ledgerValue += blk.getValue()
+
+                // data => transaction UUIDs, read from db
+
+                // => get transaction data value
+                // => push data value to ledger value
+            }
+
+
+            /* special */
+
+            // LOCKED
+            if (blk.blockType == 5) { ledgerValue += blk.getValue() }
+
+            // OBFUSCATED
+            if (blk.blockType == 6) { ledgerValue += blk.getValue() }
+        }
+
+        return ledgerValue
+    }
+
     async getBlocks() {
         try {
             ledger = []
@@ -45,7 +96,7 @@ class HybridLedger
             })
             for (block in blocks.sort(function(a,b){return a.index-b.index})) 
                 {
-                BLOCK = new Block(index=block.index,
+                BLOCK = new blk(index=block.index,
                     position=block.position,
                     ownership=block.ownership,
                     blockType=block.blockType,
@@ -59,11 +110,22 @@ class HybridLedger
             }
             return ledger 
         } catch (error) {
-            var newBlock = new Block(0,this.position,'0',0,'Empty')
+            var newBlock = new blk(0,this.position,'0',0,'Empty')
             newBlock.mint(1)
             return [newBlock]
         }
     }
 }
 
-module.exports = HybridLedger
+// create async function for hybrid ledger
+async function callHybridLedger(position) {
+    // create hybrid ledger
+    HL = await new HybridLedger(position)
+    ledger = await HL.getBlocks()
+
+    HL.ledger = ledger
+    HL.lastBlock = ledger[ledger.length - 1]
+    return HL
+}
+
+module.exports = { callHybridLedger }
