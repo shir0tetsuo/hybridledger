@@ -23,7 +23,7 @@
 //
 
 const db = require('./db.js')
-const blk = require('./block.js')
+const Block = require('./block.js')
 
 class HybridLedger
 {
@@ -94,23 +94,23 @@ class HybridLedger
             const blocks = await db.Ledgers.findAll({
                 where: { position: this.position }
             })
-            for (block in blocks.sort(function(a,b){return a.index-b.index})) 
+            for (const blk of blocks.sort(function(a,b){return a.index-b.index})) 
                 {
-                BLOCK = new blk(index=block.index,
-                    position=block.position,
-                    ownership=block.ownership,
-                    blockType=block.blockType,
-                    data=block.data,
-                    previousHash=block.previousHash,
-                    minted=block.minted,
-                    nonce=block.nonce,
-                    timestamp=block.timestamp,
-                    uuid=block.uuid)
-                ledger.push(block)
+                var BLK = new Block(index=blk.index,
+                    position=blk.position,
+                    ownership=blk.ownership,
+                    blockType=blk.blockType,
+                    data=blk.data,
+                    previousHash=blk.previousHash,
+                    minted=blk.minted,
+                    nonce=blk.nonce,
+                    timestamp=blk.timestamp,
+                    uuid=blk.uuid)
+                ledger.push(BLK)
             }
             return ledger 
         } catch (error) {
-            var newBlock = new blk(0,this.position,'0',0,'Empty')
+            var newBlock = new Block(0,this.position,'0',0,'Empty')
             newBlock.mint(1)
             return [newBlock]
         }
@@ -125,6 +125,7 @@ async function callHybridLedger(position) {
 
     HL.ledger = ledger
     HL.lastBlock = ledger[ledger.length - 1]
+    HL.ownership = HL.lastBlock.ownership
     return HL
 }
 

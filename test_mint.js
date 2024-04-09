@@ -14,5 +14,8 @@ let testUser = sysmath.newUUID()
 HybridLedgers.callHybridLedger('0x0,0x0').then((HL) => {
     console.log(HL.ledger[0])
     HL.lastBlock.debug()
+    console.log('----')
     console.log('LEDGER_VALUE:',HL.getValue())
+    console.log('OWNERSHIP:', HL.ownership)
+    console.log('REALM:', HL.realm)
 })
