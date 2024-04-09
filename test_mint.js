@@ -1,15 +1,29 @@
 // require block.js class Block
 const Block = require('./module/block.js')
+const HybridLedger = require('./module/ledger.js')
 
-m = new Block(0, '0x0,0x0')
 
-m.mint(4)
+const sysmath = require('./module/math.js')
 
-// wait 10 seconds
-setTimeout(() => {
-    console.log(m.getValue())
-}, 30000)
+let testUser = sysmath.newUUID()
 
-setTimeout(() => {
-    console.log(m.getValue())
-}, 5000)
+//m = new Block(0, '0x0,0x0', testUser, 0, 'Hello, World!')
+
+//m.mint(4)
+//m.debug()
+
+
+// create async function for hybrid ledger
+async function callHybridLedger(position) {
+    // create hybrid ledger
+    HL = await new HybridLedger(position)
+    BLOCKS = await HL.getBlocks()
+
+    var ledger = BLOCKS
+
+    return ledger
+}
+
+callHybridLedger('0x0,0x0').then((HL) => {
+    console.log(HL[0])
+})

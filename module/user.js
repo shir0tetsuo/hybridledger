@@ -47,7 +47,7 @@ class UserAccount
 
         // @user
         this.userName = userName
-        this.userEmail = userEmail
+        //this.userEmail = userEmail
         this.userUUID = userUUID
 
         this.accountType = accountType
@@ -80,9 +80,6 @@ class UserAccount
 
         // add to database
 
-        // free plaintxt from memory
-        //this.plaintxtPassword = false
-
         // notify system user registered
         this.registered = true
     }
@@ -108,5 +105,15 @@ class UserAccount
             return false
         }
         
+    }
+
+    async read(userUUID) {
+        var user = await db.Users.findOne({
+            where: {
+                uuid: userUUID
+            }
+        })
+
+        return user
     }
 }

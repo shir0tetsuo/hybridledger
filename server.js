@@ -50,6 +50,4 @@ server.use(express.json())
 // private configuration
 require("dotenv").config();
 
-
-
 let application_start = new Date();

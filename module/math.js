@@ -23,6 +23,7 @@
 //
 
 const SHA256 = require('crypto-js/sha256')
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * Use any `seed` string to find deterministic value in values
@@ -56,8 +57,14 @@ function getDeterministicValue(seed, values = ['.','-','+','o'])
  */
 function getRandomInt(max) { return Math.floor(Math.random() * Math.floor(max)); }
 
+function newUUID() { 
+    uuid = uuidv4()
+    return uuid 
+}
+
 // export functions
 module.exports = {
     getDeterministicValue,
-    getRandomInt
+    getRandomInt,
+    newUUID
 }

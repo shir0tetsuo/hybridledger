@@ -75,10 +75,10 @@ class Block
      * @param {date} timestamp
      * @param {uuid} uuid
     */
-    constructor(index, 
-        position, 
-        ownership, 
-        blockType, 
+    constructor(index,
+        position,
+        ownership,
+        blockType,
         data,
         previousHash = '0',
         minted = 0,
@@ -99,22 +99,22 @@ class Block
         /*////////////////////////////////////////
         Defines what to do with the payload.
 
-            0 = EMPTY (Empty)
+            0 = EMPTY (Empty) (mint 1)
 
-            1 = GENESIS (Genesis Message)
+            1 = GENESIS (Genesis Message) (mint 2)
 
-            2 = MINTED (QR Code? & Immutable Message)
+            2 = MINTED (QR Code? & Immutable Message) (mint 4)
 
-            3 = TRANSACTION (value to decrease)
+            3 = TRANSACTION (value to decrease) (mint 3)
 
-            4 = ACQUIREMENT (UUIDs of Transactions)
+            4 = ACQUIREMENT (UUIDs of Transactions) (mint 4)
 
             5 = LOCKED (Immutable msg, administrative locking
                         prevents users from taking over ledger,
-                        but other administrators are immune.)
+                        but other administrators are immune.) (mint 3)
 
             6 = OBFUSCATED (Immutable msg, but only the owner
-                            can see the data.)
+                            can see the data.) (mint 4)
         */////////////////////////////////////////
         
         // timestamp of runtime genesis
@@ -202,7 +202,20 @@ class Block
 
     }
 
-    // free from memory
+    /*
+    rmqr() {
+        encode = this.uuid;
+
+        // Use qrean to encode an rMQR code to buffer.
+        //var rMQR = Qrean.encode(encode);
+
+        return rMQR
+    }*/
+
+    /**
+     * Free block from memory (cocurrent processing)
+     * @returns {null}
+     */
     destroy() {
         this.index = undefined;
         this.position = undefined;
@@ -216,6 +229,26 @@ class Block
         this.nonce = undefined;
         this.hash = undefined;
         return
+    }
+
+    /**
+     * @returns debugging information `(console.log)`
+     */
+    debug() {
+        let types = ['EMPTY','GENESIS','MINTED','TRANSACTION','ACQUIREMENT','LOCKED','OBFUSCATED']
+        console.log('----')
+        console.log('INDEX:',this.index);
+        console.log('POSITION:',this.position);
+        console.log('OWNERSHIP:',this.ownership);
+        console.log('TYPE:', this.blockType, types[this.blockType])
+        console.log('DATA:', this.data);
+        console.log('MINTED:', this.minted);
+        console.log('TS:', new Date(this.timestamp).toString());
+        console.log('UUID:', this.uuid)
+        console.log('NONCE:', this.nonce)
+        console.log('HASH:', this.hash)
+        console.log('VALUE:', this.getValue())
+        console.log('DIFFICULTY:', this.getDifficulty())
     }
 }
 
