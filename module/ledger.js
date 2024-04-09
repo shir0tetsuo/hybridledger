@@ -25,8 +25,26 @@
 const db = require('./db.js')
 const Block = require('./block.js')
 
+/**
+ * v3
+ * 
+ * HybridLedger is a position wallet holding a ledger of blocks.
+ * Ledger of blocks contains data and transaction information.
+ * System loads and saves (mints) block data from db.
+ * 
+ * @construct > `position`, `realm`
+ * @callHybridLedger > `ledger`, `lastBlock`, `ownership`
+ * 
+ * @func `checkPristine`, `getValue`
+ * @async `getBlocks`
+ * 
+ */
 class HybridLedger
 {
+    /**
+     * Constructor creates information foundation from position
+     * @param {string} position 
+     */
     constructor(position)
     {
         this.position = position
@@ -37,6 +55,35 @@ class HybridLedger
         }
     }
 
+    /**
+     * 
+     * @requires this.ledger
+     * @returns {boolean} `pristine=`
+     */
+    checkPristine() {
+        // check if ledger is available
+        if (!this.ledger) { return false }
+
+        // one entry is always pristine as there is nothing to check back on
+        if (this.ledger.length < 2) { return true }
+
+        var pristine = true
+
+        for (i = this.ledger.length - 2; i >= 0; i--) {
+            if (this.ledger[i].getHash() != this.ledger[i + 1].previousHash) {
+                pristine = false
+                break
+            }
+        }
+        return pristine
+    }
+
+    /**
+     * Return the calculated sum of the blocks in the ledger.
+     * 
+     * @requires this.ledger
+     * @returns {float} value
+     */
     getValue() {
         if (!this.ledger) { return 0 }
         
@@ -88,6 +135,11 @@ class HybridLedger
         return ledgerValue
     }
 
+    /**
+     * Async call of ledger list by sorting db.Ledgers where `position` = `this.position`
+     * 
+     * @returns {list} ledger
+     */
     async getBlocks() {
         try {
             ledger = []
@@ -117,7 +169,12 @@ class HybridLedger
     }
 }
 
-// create async function for hybrid ledger
+/**
+ * Async function call handles db IO and pushes variables to class.
+ * 
+ * @param {string} position 
+ * @returns {HybridLedger} HybridLedger
+ */
 async function callHybridLedger(position) {
     // create hybrid ledger
     HL = await new HybridLedger(position)
