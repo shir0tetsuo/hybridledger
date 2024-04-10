@@ -177,7 +177,16 @@ class Block
     /**
      * @returns {integer} for difficulty = `^"0"*?`
      */
-    getDifficulty() { return this.hash.match(/^0+/)[0].length; }
+    getDifficulty() { 
+        try {
+            var difficulty = this.hash.match(/^0+/)[0].length;
+        } catch (e) {
+            console.log('Exception occurred at getDifficulty')
+            // non-pristine block value is multiplied by zero
+            var difficulty = 0;
+        }
+        return difficulty; 
+    }
 
 
     /**

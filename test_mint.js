@@ -18,4 +18,7 @@ HybridLedgers.callHybridLedger('0x0,0x0').then((HL) => {
     console.log('LEDGER_VALUE:',HL.getValue())
     console.log('OWNERSHIP:', HL.ownership)
     console.log('REALM:', HL.realm)
+    console.log(HL.lastBlock)
+    HL.mintByAuthorizing(testUser, 'Hello, World!')
+    //HL.lastBlock.debug()
 })

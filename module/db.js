@@ -55,7 +55,7 @@ const Ledgers = sequelize.define('HybridLedgers', {
     previousHash: { type: Sequelize.STRING, allowNull: false, defaultValue: '0' },
     minted: { type: Sequelize.INTEGER, allowNull: false, defaultValue: 0 },
     nonce: { type: Sequelize.INTEGER, allowNull: false},
-    timestamp: { type: Sequelize.STRING, allowNull: false },
+    timestamp: { type: Sequelize.INTEGER, allowNull: false },
     uuid: { type: Sequelize.STRING, allowNull: false }
 })
 

@@ -56,11 +56,89 @@ class HybridLedger
     }
 
     /**
+     * Directly push new blocks to ledger and database.
+     * 
+     * @param {Block} block 
+     */
+    async commit(block) 
+    {
+        // Remove the empty block by replacing it with Genesis
+        if (block.blockType == 1)
+        {
+            this.ledger = [block]
+        } else {
+            this.ledger.push(block)
+        }
+
+        this.lastBlock = block
+        this.ownership = block.ownership
+
+        try {
+            const io = db.Ledgers.create({
+                index: block.index,
+                position: block.position,
+                ownership: block.ownership,
+                blockType: block.blockType,
+                data: block.data,
+                previousHash: block.previousHash,
+                minted: block.minted,
+                nonce: block.nonce,
+                timestamp: block.timestamp,
+                uuid: block.uuid
+            }).catch(e => {
+                console.log(1,e)
+            })
+        } catch (e) {
+            console.log(2,e)
+        } finally {
+            console.log('OK','b-'+block.uuid,'=>Ledgers')
+        }
+
+        return this
+    }
+
+    /**
+     * Mint 
+     * 
+     * @requires this.ledger
+     * @param {string} data 
+     * @param {number} blockType 
+     */
+    async mintByAuthorizing(authorizingUUID, data)
+    {
+
+        const authorizingUserEntry = await db.Users.findOne({ where: { userUUID: authorizingUUID } })
+        if (!authorizingUserEntry) { return console.log('! Mint Unauthorized') }
+
+        // over Empty Block creates a Genesis Ledger Registration block.
+        if (this.lastBlock.ownership == '0')
+        {
+            // empty -> Genesis -> New Block
+            if (this.lastBlock.blockType == 0) {
+                // mint genesis block declaring stack ownership
+                const emptyHash = await this.lastBlock.getHash();
+                var genesisBlock = new Block(0,this.position,authorizingUUID,1,'Genesis Ledger Registration',emptyHash);
+                await genesisBlock.mint(2);
+                await this.commit(genesisBlock);
+
+                const genesisHash = await genesisBlock.getHash();
+
+                // mint new block and data
+                var newBlock = new Block(1,this.position,authorizingUUID,2,data,genesisHash);
+                await newBlock.mint(4)
+                await this.commit(newBlock);
+
+            }
+        }
+    }
+
+    /**
      * 
      * @requires this.ledger
      * @returns {boolean} `pristine=`
      */
-    checkPristine() {
+    checkPristine()
+    {
         // check if ledger is available
         if (!this.ledger) { return false }
 
@@ -84,7 +162,8 @@ class HybridLedger
      * @requires this.ledger
      * @returns {float} value
      */
-    getValue() {
+    getValue()
+    {
         if (!this.ledger) { return 0 }
         
         // for each block ...
@@ -142,26 +221,33 @@ class HybridLedger
      */
     async getBlocks() {
         try {
-            ledger = []
+            var ledger = []
             const blocks = await db.Ledgers.findAll({
                 where: { position: this.position }
-            })
-            for (const blk of blocks.sort(function(a,b){return a.index-b.index})) 
+            }).then((blocks) => {
+                if (!blocks || blocks.length < 1)
                 {
-                var BLK = new Block(index=blk.index,
-                    position=blk.position,
-                    ownership=blk.ownership,
-                    blockType=blk.blockType,
-                    data=blk.data,
-                    previousHash=blk.previousHash,
-                    minted=blk.minted,
-                    nonce=blk.nonce,
-                    timestamp=blk.timestamp,
-                    uuid=blk.uuid)
-                ledger.push(BLK)
-            }
-            return ledger 
+                    var newBlock = new Block(0,this.position,'0',0,'Empty')
+                    newBlock.mint(1)
+                    ledger = [newBlock]
+                }
+                else 
+                {
+                    for (const blk of blocks.sort(function(a,b){return a.index-b.index})) 
+                    {
+                        console.log(blk.timestamp)
+                        var BLK = new Block(blk.index,blk.position,blk.ownership,blk.blockType,blk.data,blk.previousHash,blk.minted,blk.nonce,blk.timestamp,blk.uuid)
+                        ledger.push(BLK)
+                    }
+                    
+                }
+                console.log('LEDGER:',ledger)
+                this.ledger = ledger
+                return ledger
+            })
+            return ledger
         } catch (error) {
+            console.log(error)
             var newBlock = new Block(0,this.position,'0',0,'Empty')
             newBlock.mint(1)
             return [newBlock]
@@ -175,13 +261,15 @@ class HybridLedger
  * @param {string} position 
  * @returns {HybridLedger} HybridLedger
  */
-async function callHybridLedger(position) {
+async function callHybridLedger(position)
+{
     // create hybrid ledger
     HL = await new HybridLedger(position)
-    ledger = await HL.getBlocks()
+    const ledger = await HL.getBlocks()
 
-    HL.ledger = ledger
-    HL.lastBlock = ledger[ledger.length - 1]
+    HL.ledger = await ledger
+    console.log(ledger)
+    HL.lastBlock = await ledger[ledger.length - 1]
     HL.ownership = HL.lastBlock.ownership
     return HL
 }
