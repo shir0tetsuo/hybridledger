@@ -22,7 +22,8 @@
 // SOFTWARE.
 //
 
-const SHA256 = require('crypto-js/sha256')
+var qr = require('qr-image');
+const SHA256 = require('crypto-js/sha256');
 const { v4: uuidv4 } = require('uuid');
 
 /*
@@ -126,7 +127,9 @@ class Block
         this.data           = data;           // any
 
         // minting
-        // this.hash is calculated when the class is called.
+        // this.hash is calculated when class is called,
+        // and can also be called as function.
+        // Hash should always be attached to block.
         this.nonce          = nonce;
         this.hash           = this.getHash();
         
@@ -173,6 +176,13 @@ class Block
         return mintValue
     }
 
+    
+    async getQRCode() {
+        // TODO: Include site path from .env
+        var code = qr.image(this.uuid, { type: 'png' });
+        return code;
+    }
+
 
     /**
      * @returns {integer} for difficulty = `^"0"*?`
@@ -211,15 +221,6 @@ class Block
 
     }
 
-    /*
-    rmqr() {
-        encode = this.uuid;
-
-        // Use qrean to encode an rMQR code to buffer.
-        //var rMQR = Qrean.encode(encode);
-
-        return rMQR
-    }*/
 
     /**
      * Free block from memory (cocurrent processing)

@@ -22,98 +22,173 @@
 // SOFTWARE.
 //
 
+const db = require('./db.js');
 const SHA256 = require('crypto-js/sha256')
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt') // https://www.npmjs.com/package/bcrypt
 const saltRounds = 10;
 
-/*
-    accountFactory => sql => constructor
-    or
-    web => accountFactory => sql => constructor
-*/
+/**
+ * User Profile:
+ * 
+ *  * = Generated
+ *  v = Deterministic (Function)
+ * 
+ * *- UUID
+ *  - User Name
+ *  - User Email
+ *  - {boolean} Display Email
+ * 
+ * v- User Profile Graphic
+ * 
+ *  - Account Type (Guest=0, User=1, Moderator=2, Admin=3)
+ * 
+ * *- Last IP Address
+ * 
+ *  - Plaintext Password (undefined when converted to protected)
+ * *- Protected Password
+ */
 
-// Wip
+async function getUser(userName) { return user = db.Users.findOne({ where: { userName: this.userName }}) }
+
 class UserAccount
 {
-    constructor(userName,
-        userEmail,
-        userUUID = uuidv4(),
-        accountType = 0,
-        plaintxtPassword = undefined,
-        privatePassword = undefined,
-        registered = false)
+    constructor(plaintextPasswd, lastIP = 'localhost', username='Guest', userUUID=uuidv4())
     {
-
-        // @user
-        this.userName = userName
-        //this.userEmail = userEmail
+        // new users get new UUID
         this.userUUID = userUUID
 
-        this.accountType = accountType
-        this.plaintxtPassword = plaintxtPassword
-        this.privatePassword = privatePassword
+        // also determines logged in status
+        this.accountType = 0
 
-        this.registered = registered
-        this.authorized = false
+        this.userName = username
+        this.publicName = username
+        this.userEmail = 'example@example.com'
 
-        if (!this.registered) { this.registerUser() }
+        // admins get a calculated golden shim
+        this.vertA = undefined // deterministic
+        this.vertB = undefined // deterministic
+        this.vertC = undefined // deterministic
+        this.vertD = undefined // deterministic
+        this.emoji = '⛩️' // User-Set Default
 
+        // erased at login/registration
+        this.passwordToCompare = plaintextPasswd
+
+        this.displayEmail = false
+
+        this.lastIP = lastIP
+        this.sessionKey = uuidv4() // for {sessionKey:UserAccount}
+    }
+
+
+    updateEmoji()
+    {
 
     }
 
-    // Wip
-    getAccountNodes(public = false) {
-        // => search records * uuid
-        // => get unique positional references
-        // => search positions for oldest block
-        // => trim non-ownership blocks
-        return
+
+    updatePublicName()
+    {
+
     }
 
-    // Wip
-    registerUser() {
-        // check if username/email exists in db
 
-        // hash plaintxt password
-        this.privatePassword = bcrypt.hashSync(this.plaintxtPassword, saltRounds)
+    updateUserEmail()
+    {
 
-        // add to database
-
-        // notify system user registered
-        this.registered = true
     }
 
-    // Wip
+
     /**
-     * Test plaintxt against hashed passwords.
-     * Success returns `true` to receive cookie.
-     * @returns {boolean}
+     * registration = `await register()`
+     * 
+     * `(if registration) { SessionKey = UserAccount.sessionKey } ...`
+     * 
+     * @requires this.passwordToCompare
+     * @returns Promise {boolean}
      */
-    authorize() {
-
-        // Cannot authorize if no password given
-        if (this.plaintxtPassword == undefined) { return false }
-
-        if (bcrypt.compareSync(this.plaintxtPassword, this.privatePassword)) {
-            this.authorized = true
-            this.plaintxtPassword = undefined
-            return true
-        } else {
-            this.authorized = false
-            this.plaintxtPassword = undefined
-            return false
-        }
+    async register() 
+    {
+        let privatePassword = bcrypt.hashSync(this.passwordToCompare, saltRounds);
         
+        try {
+            const User = db.Users.create({
+                userUUID: this.userUUID,
+                userName: this.userName,
+                userEmail: this.userEmail,
+                publicName: this.publicName,
+                accountType: 1,
+                emoji: this.emoji,
+                displayEmail: this.displayEmail,
+                privatePassword: privatePassword,
+                lastIP: this.lastIP            
+            })
+        } catch (e) {
+            console.log(e)
+            return false
+        } finally {
+            this.passwordToCompare = undefined;
+            return true
+        }
     }
 
-    async read(userUUID) {
-        var user = await db.Users.findOne({
-            where: {
-                uuid: userUUID
-            }
-        })
+    async getUserLastBlock()
+    {
 
-        return user
+    }
+
+    async getUserFirstBlock()
+    {
+
+    }
+
+    async authorize() 
+    {
+        if (!this.passwordToCompare || this.passwordToCompare == undefined) { return false }
+
+
+        const User = await getUser(this.userName);
+
+
+        if (!User) { return false } // Don't login if user doesn't exist
+        else {
+            // If the user exists, compare the plaintext password against the private hashed password;
+            if (bcrypt.compareSync(this.passwordToCompare, User.privatePassword)) {
+                // Push variables to class
+                this.userUUID = User.userUUID
+                this.userEmail = User.userEmail
+                this.publicName = User.publicName
+                this.accountType = User.accountType
+                this.emoji = User.emoji
+                this.displayEmail = User.displayEmail
+                
+                this.passwordToCompare = undefined
+
+                await db.Users.update({lastIP: this.lastIP},{where:{userName: User.userName}})
+                return true
+            } else { return false } // Don't login if passwords don't match
+        }
+
+    }
+
+    /**
+     * @requires logged-in, `(userLastBlock != undefined)`
+     * @returns calculation of time remaining before able to mint again
+     */
+    async getMintingDelta()
+    {
+        //if (this.accountType == 3) { return 1 }
+
+        let lastBlock = await this.getUserLastBlock()
     }
 }
+
+async function callUserAccount(plaintextPasswd, lastIP, username)
+{
+    var uac = new UserAccount(plaintextPasswd, lastIP, username)
+    var authorized = await uac.authorize();
+    // if (authorized) { var sessionKey = uac.sessionKey; return uac }
+}
+
+module.exports = {getUser, callUserAccount}

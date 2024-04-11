@@ -1,3 +1,96 @@
+// Testing Only - Do not use in production.
+// Deprecated
+
+class UserAccount
+{
+    /**
+     * @param {string} userName Username (no decorator)
+     * @param {string} userEmail 
+     */
+    constructor(userName,
+        userEmail,
+        userUUID = uuidv4(),
+        accountType = 0,
+        plaintxtPassword = undefined,
+        privatePassword = undefined,
+        registered = false)
+    {
+
+        // @user
+        this.userName = userName
+        //this.userEmail = userEmail
+        this.userUUID = userUUID
+
+        this.accountType = accountType
+
+        // Must get private password immediately then switch back to undefined through async.
+        this.plaintxtPassword = plaintxtPassword
+        this.privatePassword = privatePassword
+
+        this.registered = registered
+        this.authorized = false
+
+        if (!this.registered) { this.registerUser() }
+
+
+    }
+
+    // Wip
+    getAccountNodes(public = false) {
+        // => search records * uuid
+        // => get unique positional references
+        // => search positions for oldest block
+        // => trim non-ownership blocks
+        return
+    }
+
+    // Wip
+    registerUser() {
+        // check if username/email exists in db
+
+        // hash plaintxt password
+        this.privatePassword = bcrypt.hashSync(this.plaintxtPassword, saltRounds)
+
+        // add to database
+
+        // notify system user registered
+        this.registered = true
+    }
+
+    // Wip
+    /**
+     * Test plaintxt against hashed passwords.
+     * Success returns `true` to receive cookie.
+     * @returns {boolean}
+     */
+    authorize() {
+
+        // Cannot authorize if no password given
+        if (this.plaintxtPassword == undefined) { return false }
+
+        if (bcrypt.compareSync(this.plaintxtPassword, this.privatePassword)) {
+            this.authorized = true
+            this.plaintxtPassword = undefined
+            return true
+        } else {
+            this.authorized = false
+            this.plaintxtPassword = undefined
+            return false
+        }
+        
+    }
+
+    async read(userUUID) {
+        var user = await db.Users.findOne({
+            where: {
+                uuid: userUUID
+            }
+        })
+
+        return user
+    }
+}
+
 
 class HybridLedger
 {

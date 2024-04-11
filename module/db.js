@@ -39,11 +39,15 @@ const sequelize = new Sequelize('database', 'username', 'password', {
 });
 
 const Users = sequelize.define('Users', {
-    // UUID (uuidv4())
-    userUUID: { type: Sequelize.STRING, unique: true },
-    userName: { type: Sequelize.STRING, allowNull: false },
+    userUUID: { type: Sequelize.STRING, unique: true, allowNull: false },
+    userName: { type: Sequelize.STRING, unique: true, allowNull: false },
+    userEmail: { type: Sequelize.STRING },
+    publicName: { type: Sequelize.STRING },
     accountType: { type: Sequelize.INTEGER, defaultValue: 0 },
-    userPWHashed: { type: Sequelize.STRING, allowNull: false }
+    emoji: { type: Sequelize.STRING },
+    displayEmail: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: false },
+    privatePassword: { type: Sequelize.STRING, allowNull: false },
+    lastIP: { type: Sequelize.STRING }
 })
 
 const Ledgers = sequelize.define('HybridLedgers', {
