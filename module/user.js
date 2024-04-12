@@ -49,7 +49,18 @@ const saltRounds = 10;
  * *- Protected Password
  */
 
-async function getUser(userName) { return user = db.Users.findOne({ where: { userName: this.userName }}) }
+
+async function getUser(userName) { return user = await db.Users.findOne({ where: { userName: userName }}) }
+
+async function getUserByUUID(userUUID) { return user = await db.Users.findOne({ where: { userUUID: userUUID }}) }
+
+/**
+ * Deactivate the Account (set accountType = 0), admin only
+ */
+async function suspend(userUUID)
+{
+    await db.Users.update({accountType: 0}, {where: {userUUID: userUUID}})
+}
 
 class UserAccount
 {
@@ -81,22 +92,83 @@ class UserAccount
         this.sessionKey = uuidv4() // for {sessionKey:UserAccount}
     }
 
-
-    updateEmoji()
+    debug()
     {
-
+        // console.log everything in this
+        console.log('UUID:',this.userUUID)
+        console.log('ACCOUNTTYPE:',this.accountType)
+        console.log('USERNAME:',this.userName)
+        console.log('PUBLICNAME:',this.publicName)
+        console.log('USEREMAIL:',this.userEmail)
+        console.log('EMOJI:',this.emoji)
+        console.log('DISPLAYEMAIL:',this.displayEmail)
+        console.log('LASTIP',this.lastIP)
+        console.log('SESSIONKEY',this.sessionKey)
+        if (!this.passwordToCompare || this.passwordToCompare == undefined)
+        {
+            console.log('NO PASSWORD TO COMPARE')
+        } else {
+            console.log('COMPAREPASSWD: TRUE')
+        }
     }
 
 
-    updatePublicName()
+    /**
+     * Directly update emoji in db.
+     * 
+     * @param {string} newEmoji 
+     */
+    async updateEmoji(newEmoji)
     {
-
+        this.emoji = newEmoji
+        await db.Users.update({emoji: newEmoji}, {where: { userName: this.userName }})
     }
 
 
-    updateUserEmail()
+    /**
+     * Directly update public name in db.
+     * 
+     * @param {string} newPublicName
+     */
+    async updatePublicName(newPublicName)
     {
+        this.publicName = newPublicName
+        await db.Users.update({publicName: newPublicName}, {where: { userName: this.userName }})
+    }
 
+
+    /**
+     * Directly update email string in db.
+     * 
+     * @param {string} newEmail 
+     */
+    async updateUserEmail(newEmail)
+    {
+        this.userEmail = newEmail
+        await db.Users.update({userEmail: newUserEmail}, {where: { userName: this.userName }})
+    }
+
+
+    /**
+     * Directly update display email boolean in db.
+     * 
+     * @param {boolean} displayBool 
+     */
+    async updateDisplayEmail(displayBool)
+    {
+        this.displayEmail = displayBool
+        await db.Users.update({displayEmail: displayBool}, {where: { userName: this.userName }})
+    }
+
+    /**
+     * Directly update user password in db.
+     * 
+     * @param {string} newPassword 
+     */
+    async updateUserPassword(newPassword)
+    {
+        let privatePassword = bcrypt.hashSync(newPassword, saltRounds);
+        await db.Users.update({privatePassword: privatePassword}, {where: { userName: this.userName }});
     }
 
 
@@ -110,6 +182,7 @@ class UserAccount
      */
     async register() 
     {
+        // Generate the Private Password
         let privatePassword = bcrypt.hashSync(this.passwordToCompare, saltRounds);
         
         try {
@@ -135,60 +208,177 @@ class UserAccount
 
     async getUserLastBlock()
     {
+        // Get the last block in the database that contains the user's ownership
 
+        const lastBlock = await db.Ledgers.findOne({
+            where: {
+                ownership: this.userUUID
+            },
+            order: [
+                // use timestamp as order and use the greatest value
+                ['timestamp', 'DESC']
+            ]
+        });
+
+        if (!lastBlock) { return false } // can mint first block immediately
+
+        return lastBlock
     }
 
     async getUserFirstBlock()
     {
+        const firstBlock = await db.Ledgers.findOne({
+            where: {
+                ownership: this.userUUID
+            },
+            order: [
+                // use timestamp as order and use the lowest value
+                ['timestamp', 'ASC']
+            ]
+        });
 
+        if (!firstBlock) { return false }
+
+        return firstBlock
     }
 
-    async authorize() 
+    async getNumBlocks()
     {
-        if (!this.passwordToCompare || this.passwordToCompare == undefined) { return false }
+        // Obtain total number (length) of db.Ledgers where ownership is user UUID
+        const numBlocks = await db.Ledgers.count({
+            where: {
+                ownership: this.userUUID
+            }
+        });
 
+        // If there are none, return 0
+        if (!numBlocks || numBlocks.length == 0 || numBlocks == undefined) { return 0 }
 
-        const User = await getUser(this.userName);
-
-
-        if (!User) { return false } // Don't login if user doesn't exist
-        else {
-            // If the user exists, compare the plaintext password against the private hashed password;
-            if (bcrypt.compareSync(this.passwordToCompare, User.privatePassword)) {
-                // Push variables to class
-                this.userUUID = User.userUUID
-                this.userEmail = User.userEmail
-                this.publicName = User.publicName
-                this.accountType = User.accountType
-                this.emoji = User.emoji
-                this.displayEmail = User.displayEmail
-                
-                this.passwordToCompare = undefined
-
-                await db.Users.update({lastIP: this.lastIP},{where:{userName: User.userName}})
-                return true
-            } else { return false } // Don't login if passwords don't match
-        }
-
+        return numBlocks
     }
 
     /**
+     * 
+     * @returns `db.Users: User => this`
+     */
+    async authorize() {
+        try {
+            if (!this.passwordToCompare || this.passwordToCompare == undefined) { console.log('! No Password'); return }
+    
+            const User = await getUser(this.userName);
+    
+            if (!User) { console.log('! No User'); return } // Don't login if user doesn't exist
+            else {
+                // If the user exists, compare the plaintext password against the private hashed password;
+                if (bcrypt.compareSync(this.passwordToCompare, User.privatePassword)) {
+                    // Push variables to class
+                    this.userUUID = User.userUUID
+                    this.userEmail = User.userEmail
+                    this.publicName = User.publicName
+                    this.accountType = User.accountType
+                    this.emoji = User.emoji
+                    this.displayEmail = User.displayEmail
+                    
+                    // Destroy plaintext password
+                    this.passwordToCompare = undefined
+    
+                    // Push Last IP Address to database
+                    await db.Users.update({lastIP: this.lastIP},{where:{userName: User.userName}})
+                }
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    /**
+     * Return exact time before able to mint again. If negative value or 0, user should
+     * be able to mint a new block.
+     * 
+     * Personal realm is unlimited use, but contains the same ownership,
+     * therefore minted personal blocks will also increment the mint time
+     * in the public realm.
+     * 
+     * Might want to change this in the future.
+     * 
      * @requires logged-in, `(userLastBlock != undefined)`
+     * @param {number} divide users may acquire boosters that cut minting time
      * @returns calculation of time remaining before able to mint again
      */
-    async getMintingDelta()
+    async timeToMint(divide = 1)
     {
-        //if (this.accountType == 3) { return 1 }
+        // admin can mint immediately
+        if (this.accountType == 3) { return 0 }
 
-        let lastBlock = await this.getUserLastBlock()
+        // moderator mint time cut in half
+        if (this.accountType == 2) { divide += 1 }
+
+        // integer for Now
+        let now = new Date().getTime()
+
+        // Get the user's last minted block
+        let lastBlock = await this.getUserLastBlock();
+
+        // No blocks => mint immediately
+        if (!lastBlock || lastBlock == false) { return 0 }
+
+        // Get num of user's minted blocks
+        let mintedBlocks = await this.getNumBlocks();
+
+        // last block timestamp
+        let lastMintTS = lastBlock.timestamp;
+        
+        // datetime to pass (ts+(n*.5s))
+        let mintDelta = (lastMintTS + Math.floor((mintedBlocks * 500)/divide))
+
+        // Calculate the time remaining until user can mint again
+        let timeRemaining = mintDelta - now
+
+        return timeRemaining
     }
 }
 
+/**
+ * Initialize a user account template. 
+ * Guests may only read and not mint.
+ * 
+ * Use return to control settings, db management;
+ * `{sessionKey (from cookie) : UserAccount}`
+ * 
+ * @param {string} plaintextPasswd 
+ * @param {string} lastIP 
+ * @param {string} username 
+ * @returns {UserAccount}
+ */
 async function callUserAccount(plaintextPasswd, lastIP, username)
 {
+    // Init UserAccount Class
     var uac = new UserAccount(plaintextPasswd, lastIP, username)
-    var authorized = await uac.authorize();
-    // if (authorized) { var sessionKey = uac.sessionKey; return uac }
+
+    // Check user, passwd against db, update uac
+    await uac.authorize();
+
+    // Return the UserAccount class
+    return uac
 }
 
-module.exports = {getUser, callUserAccount}
+/**
+ * Return time to mint based on timeRemaining in timeToMint.
+ * 
+ * @param {UserAccount} uac 
+ * @returns {number} timeRemaining (for timers)
+ */
+async function callTimeToMint(uac, divide = 1) { let timeToMint = await uac.timeToMint(divide); return timeToMint; }
+
+module.exports = {
+    // Read (db)
+    getUser, 
+    getUserByUUID, 
+    
+    // Admin
+    suspend, 
+    
+    // Read/Write/Update (uac)
+    callUserAccount, 
+    callTimeToMint,
+}

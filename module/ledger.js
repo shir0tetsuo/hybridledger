@@ -74,7 +74,7 @@ class HybridLedger
         this.ownership = block.ownership
 
         try {
-            const io = db.Ledgers.create({
+            const io = await db.Ledgers.create({
                 index: block.index,
                 position: block.position,
                 ownership: block.ownership,

@@ -25,8 +25,12 @@
 // server application module
 const express = require('express')
 
-// require extra modules
+// require custom modules
 const Block = require('./module/block.js')
+const Users = require('./module/user.js')
+const db = require('./module/db.js')
+const HybridLedgers = require('./module/ledger.js')
+const sysmath = require('./module/math.js')
 
 // extended features
 const bparse = require('body-parser') //https://codeforgeek.com/handle-get-post-request-express-4/
@@ -35,14 +39,11 @@ const cookies = require('cookie-parser') //https://stackoverflow.com/questions/1
 // fs
 const ff = require('fs')
 const fs = require('fs').promises;
-const sequelize = require('sequelize')
+const path = require('path');
 
 // server decl
 const server = express();
 const port = 8155;
-
-// db
-const Sequelize = require('sequelize')
 
 // include json
 server.use(express.json()) 
@@ -51,3 +52,59 @@ server.use(express.json())
 require("dotenv").config();
 
 let application_start = new Date();
+
+/**
+ * Read file from fs like from `'/private'`
+ * 
+ * @param {string} filePath 
+ * @returns {string} file data => `data.toString()`
+ */
+async function readFile(filePath) {
+    try {
+      const data = await fs.readFile(filePath);
+      return data.toString()
+    } catch (error) {
+      console.error(`Read Error: ${error.message}`);
+    }
+}
+
+/**
+ * Replace any number of ${VARIABLES} in an .html file
+ * by a given dict.
+ * 
+ * @param {string} filePath 
+ * @param {dict} variablesToReplace 
+ * @returns {string} data
+ */
+async function replace(filePath, variablesToReplace) {
+    var data = await readFile(filePath);
+    for (var key in variablesToReplace) {
+      data = data.replace(new RegExp(`\${${key}}`, 'g'), variablesToReplace[key]);
+    }
+    return data;
+}
+
+/* Create a function to generate HTML response from a given dict.
+async function generateHTMLResponse(dict)
+{
+    var pages = {};
+    pages.header = await replace('./test_page.html', dict);
+    pages.footer = await replace('./test_page_footer.html', dict);
+    return pages
+}*/
+
+// get /test
+server.get('/test', (req, res) => {
+    console.log('/, 200=>OK')
+    res.sendFile(path.resolve('./test_page.html'))
+})
+
+// Serve static content from /static
+server.use('/static', express.static(path.resolve('./static')))
+server.use('/favicon.ico', express.static(path.resolve('./favicon.ico')))
+
+// Start Server Listener
+server.listen(
+    port,
+    () => console.log(`Connection open @ localhost:${port}`)
+)
