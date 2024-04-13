@@ -257,11 +257,26 @@ class UserAccount
         return numBlocks
     }
 
+    async authorizePrivate(privatePassword) {
+        const User = await getUser(this.userName);
+        if (this.privatePassword == user.privatePassword) {
+            this.userUUID = User.userUUID
+            this.userEmail = User.userEmail
+            this.publicName = User.publicName
+            this.accountType = User.accountType
+            this.emoji = User.emoji
+            this.displayEmail = User.displayEmail
+            await db.Users.update({lastIP: this.lastIP},{where:{userName: User.userName}})
+            return true
+        } else { return false }
+    }
+
     /**
+     * Authorize from a plaintext password.
      * 
      * @returns `db.Users: User => this`
      */
-    async authorize() {
+    async authorizePlaintxt() {
         try {
             if (!this.passwordToCompare || this.passwordToCompare == undefined) { console.log('! No Password'); return }
     
@@ -350,16 +365,36 @@ class UserAccount
  * @param {string} username 
  * @returns {UserAccount}
  */
-async function callUserAccount(plaintextPasswd, lastIP, username)
+async function callUserAccountAuthPT(plaintextPasswd, lastIP, username)
 {
     // Init UserAccount Class
     var uac = new UserAccount(plaintextPasswd, lastIP, username)
 
     // Check user, passwd against db, update uac
-    await uac.authorize();
+    await uac.authorizePlaintxt();
 
     // Return the UserAccount class
     return uac
+}
+
+/**
+ * Check whether the user exists in db, and if the password matches.
+ * 
+ * @param {string} userName 
+ * @param {string} privatePassword 
+ * @returns 
+ */
+async function callUserPrivate(userName, privatePassword)
+{
+    const account = await db.Users.findOne({where: {userName: userName}})
+    if (!account || account == undefined) { return false }
+    else { 
+        if (account.privatePassword == privatePassword) {
+            return true
+        } else {
+            return false
+        }
+    }
 }
 
 /**
@@ -379,6 +414,13 @@ module.exports = {
     suspend, 
     
     // Read/Write/Update (uac)
-    callUserAccount, 
+    callUserAccount: callUserAccountAuthPT, 
+    callUserAccountAuthPT,
     callTimeToMint,
+
+    // uac logged in true/false
+    callUserPrivate,
+
+    // uac itself
+    UserAccount
 }

@@ -48,6 +48,9 @@ const port = 8155;
 // include json
 server.use(express.json()) 
 
+// cookies
+server.use(cookies())
+
 // private configuration
 require("dotenv").config();
 
@@ -71,33 +74,146 @@ async function readFile(filePath) {
 /**
  * Replace any number of ${VARIABLES} in an .html file
  * by a given dict.
- * 
- * @param {string} filePath 
- * @param {dict} variablesToReplace 
+ *
+ * @param {string} filePath
+ * @param {siteMetadata} siteMeta
  * @returns {string} data
  */
-async function replace(filePath, variablesToReplace) {
+async function replace(filePath, siteMeta) {
     var data = await readFile(filePath);
-    for (var key in variablesToReplace) {
-      data = data.replace(new RegExp(`\${${key}}`, 'g'), variablesToReplace[key]);
+    for (var key in siteMeta.variablesToReplace) {
+      data = data.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), siteMeta.variablesToReplace[key]);
     }
     return data;
 }
 
-/* Create a function to generate HTML response from a given dict.
-async function generateHTMLResponse(dict)
+var loggedIn = {}
+
+class siteMetadata
 {
-    var pages = {};
-    pages.header = await replace('./test_page.html', dict);
-    pages.footer = await replace('./test_page_footer.html', dict);
-    return pages
-}*/
+  constructor()
+  {
+    this.uac = undefined
+    this.variablesToReplace = 
+    {
+      // defaults
+      'TITLE': process.env.SITE,
+      'SITEOWNER': process.env.SITEOWNER,
+      'SITE': process.env.SITE,
+      'DESCRIPTION': 'shadowsword.ca Hybrid Ledger System. Create a minted immutable Hybrid Ledger using our new web application.',
+      'DISCORDSITENAME': process.env.SITEADDRESS,
+      'VERSION': process.env.VERSION,
+      'SERVERSTART': `at ${application_start.toISOString()}`
+    }
+  }
+
+  /**
+   * Push UAC variables to class replace variables.
+   * @returns {UserAccount} `this.uac`
+   */
+  pushUACToVariables()
+  {
+    this.variablesToReplace['userUUID'] = this.uac.userUUID
+    this.variablesToReplace['userName'] = this.uac.userName
+    this.variablesToReplace['userEmail'] = this.uac.userEmail
+    this.variablesToReplace['publicName'] = this.uac.publicName
+    this.variablesToReplace['accountType'] = this.uac.accountType
+    this.variablesToReplace['emoji'] = this.uac.emoji
+    this.variablesToReplace['displayEmail'] = this.uac.displayEmail
+    return this.uac
+  }
+
+  /**
+   * Pushes UAC data to keys in variablesToReplace
+   */
+  async UACHandler(req)
+  {
+    // cookies required to get uac
+    let userName = req.cookies.userName
+    let privatePassword = req.cookies.hashedPassword
+
+    // has cookies
+    if ((userName && privatePassword) && userName != undefined && privatePassword != undefined) {
+
+      // does private hash match? (boolean)
+      let access = await Users.callUserPrivate(userName, privatePassword)
+
+      // non-match: Create guest user uac
+      if (!access || access == false) { 
+
+        const uac = await new Users.UserAccount(undefined, req.ip, 'Guest')
+        this.uac = uac
+
+        return this.pushUACToVariables()
+
+      } else {
+
+        // match: Get uac by userName
+        // check if userName exists in loggedIn, otherwise
+        // create a new class instance for the user and return it;
+
+        if (loggedIn[userName]) {
+
+          this.uac = loggedIn[userName]
+
+          return this.pushUACToVariables()
+
+        } else {
+          
+          const uac = await new Users.UserAccount(undefined, req.ip, userName)
+          await uac.authorizePrivate(privatePassword)
+
+          loggedIn[userName] = uac
+          this.uac = uac
+
+          return this.pushUACToVariables()
+        }
+
+      }
+     
+    // no cookies => guest account
+    } else {
+      const uac = await new Users.UserAccount(undefined, req.ip, 'Guest')
+      this.uac = uac
+      return this.pushUACToVariables()
+    }
+    
+  }
+}
+
+// get /
+async function homepage(req, res) {
+
+  // new siteMeta class
+  var siteMeta = new siteMetadata()
+
+  // get user account and variables from cookies
+  const uac = await siteMeta.UACHandler(req)
+
+
+
+  const page_header = await replace('./private/header.html', siteMeta)
+  const page_main = await replace('./private/homepage.html', siteMeta)
+
+  let data = page_header + page_main
+ 
+  // send res status 200 with data
+  res.status(200).send(data)
+  console.log(`200 OK => ${req.ip}`)
+}
+
+// get /
+server.get('/', (req, res) => {
+  homepage(req, res)
+})
 
 // get /test
 server.get('/test', (req, res) => {
     console.log('/, 200=>OK')
     res.sendFile(path.resolve('./test_page.html'))
 })
+
+
 
 // Serve static content from /static
 server.use('/static', express.static(path.resolve('./static')))
