@@ -44,6 +44,12 @@ body {
     color: rgb(228, 0, 0) !important;
     background-color: rgba(228, 0, 0, 0.1) !important;
   }
+
+  .about-backed {
+    background-image: url("/static/img/about-bg.gif");
+    background-repeat: repeat;
+    padding-left: 50px;
+  }
   
   .display-topleft {
     font-size: 24px !important;

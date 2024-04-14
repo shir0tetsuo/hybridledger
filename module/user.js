@@ -95,6 +95,7 @@ class UserAccount
     debug()
     {
         // console.log everything in this
+        console.log('-- UserAccount.debug() --')
         console.log('UUID:',this.userUUID)
         console.log('ACCOUNTTYPE:',this.accountType)
         console.log('USERNAME:',this.userName)
@@ -102,8 +103,8 @@ class UserAccount
         console.log('USEREMAIL:',this.userEmail)
         console.log('EMOJI:',this.emoji)
         console.log('DISPLAYEMAIL:',this.displayEmail)
-        console.log('LASTIP',this.lastIP)
-        console.log('SESSIONKEY',this.sessionKey)
+        console.log('LASTIP:',this.lastIP)
+        console.log('SESSIONKEY:',this.sessionKey)
         if (!this.passwordToCompare || this.passwordToCompare == undefined)
         {
             console.log('NO PASSWORD TO COMPARE')

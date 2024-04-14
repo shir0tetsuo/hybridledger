@@ -100,10 +100,12 @@ class siteMetadata
       'TITLE': process.env.SITE,
       'SITEOWNER': process.env.SITEOWNER,
       'SITE': process.env.SITE,
+      'SITENAME': process.env.SITENAME,
       'DESCRIPTION': 'shadowsword.ca Hybrid Ledger System. Create a minted immutable Hybrid Ledger using our new web application.',
       'DISCORDSITENAME': process.env.SITEADDRESS,
       'VERSION': process.env.VERSION,
-      'SERVERSTART': `at ${application_start.toISOString()}`
+      'SERVERSTART': `at ${application_start.toISOString()}`,
+      'EXACTSERVERSTART': application_start.getTime()
     }
   }
 
@@ -113,13 +115,22 @@ class siteMetadata
    */
   pushUACToVariables()
   {
+    let accountTypes = ['Guest', 'User', 'Moderator', 'Administrator']
     this.variablesToReplace['userUUID'] = this.uac.userUUID
     this.variablesToReplace['userName'] = this.uac.userName
     this.variablesToReplace['userEmail'] = this.uac.userEmail
     this.variablesToReplace['publicName'] = this.uac.publicName
     this.variablesToReplace['accountType'] = this.uac.accountType
+    this.variablesToReplace['accountTypeStr'] = accountTypes[this.uac.accountType]
     this.variablesToReplace['emoji'] = this.uac.emoji
     this.variablesToReplace['displayEmail'] = this.uac.displayEmail
+
+    if (this.uac.accountType > 0) {
+      this.variablesToReplace['LoginStatus'] = `(Authorized as ${accountTypes[this.uac.accountType]})`
+    } else {
+      this.variablesToReplace['LoginStatus'] = '(Not Logged In - Minting Disabled)'
+    }
+
     return this.uac
   }
 
@@ -190,7 +201,7 @@ async function homepage(req, res) {
   // get user account and variables from cookies
   const uac = await siteMeta.UACHandler(req)
 
-
+  uac.debug()
 
   const page_header = await replace('./private/header.html', siteMeta)
   const page_main = await replace('./private/homepage.html', siteMeta)

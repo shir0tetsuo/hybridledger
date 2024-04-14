@@ -1,22 +1,59 @@
+<!-- HOMEPAGE -->
 <html>
-    <body>
+    <body onload="getUptime()">
         <div class="display-topleft">
             <span title="Home"><a href="/">${SITE}//</a> <b>${VERSION}</b></span>
-            <a href="https://github.com/shir0tetsuo/hybridledger/commits/main"><span style="font-family: devicons; font-weight: normal; font-style: normal; font-size: 20px;" >&#xe609;</span></a>
+            <a href="https://github.com/shir0tetsuo/hybridledger/commits/main"> <i class="devicon-git-plain"></i></a>
         </div>
 
         <div class="center-pos-align">
-            <br>
-            <!--<img src="https://cdn.shadowsword.ca/dex_logo.gif">-->
+            <img src="/static/img/dex_logo.gif"><br><br>
             <div class="centered">
-          <!-- TOP_HEAD END -->
-          information</div></div>
-
+                ${SITENAME}
+            </div>
+        </div>
 
         <blockquote>
             <div class="loginbox">
-                Welcome, <a href="" class="phased">@${userName}</a>
+                Welcome, <a href="/uac" class="phased">@${userName}</a> | <a href="" class="phasedYel">Enter Application</a><br><br>
+                ${LoginStatus}
+            </div>
+        </blockquote>
+
+        <blockquote style="padding: 50px;">
+            HybridLedger uses grid positions to hold "minted" immutable data blocks, which generates individual value over time. Each grid position is a "Hybrid Ledger" (like a Blockchain Wallet), it holds a stack of minted value as well as a data point. They'll be referred to as HL's.
+            <br><br>
+            Using timestamps, it's possible to "see back in time" to observe other HL near the time of minting. It's possible to take over other positions by minting over them, consuming that HL and its value.
+            <br><br>
+            There is an "infinite" number of spaces encoded in Hexadecimal.
+        </blockquote>
+
+        <blockquote>
+            <div style="font-size: 26px; padding-left: 50px; padding-top: 10px; padding-bottom: 10px;">
+                <i class="devicon-vscode-plain colored"></i> 
+                <i class="devicon-github-original"></i>
+                <i class="devicon-nodejs-plain"></i>
+                <i class="devicon-sqlite-plain colored"></i>
+                <i class="devicon-html5-plain colored"></i>
+                <i class="devicon-javascript-plain colored"></i>
+                <i class="devicon-discordjs-plain"></i>
+                <br>
+                <i class="devicon-css3-plain-wordmark colored"></i>
+                <i class="devicon-google-plain-wordmark"></i>
+                <i class="devicon-jquery-plain-wordmark"></i>
+                <i class="devicon-linux-plain"></i>
+                <i class="devicon-express-original"></i>
+                <i class="devicon-firefox-plain colored"></i>
+                <i class="devicon-sequelize-plain colored"></i>
+            </div>
+        </blockquote>
+        
+        <blockquote>
+            <div class="about-backed">
+                <span id="serverstart" style="display:none;">${EXACTSERVERSTART}</span>
+                <span title="Server Uptime. Under 120M: Expect Server Restart" id="uptime">Up for --- minutes.</span>
             </div>
         </blockquote>
     </body>
 </html>
+<!-- HOMEPAGE EOF -->
