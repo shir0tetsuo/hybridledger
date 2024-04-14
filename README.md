@@ -1,5 +1,7 @@
 # HybridLedger
 
+Demonstration: https://shadowsword.ca/
+
 # Description
 HybridLedger uses grid positions to hold "minted" immutable data blocks, 
 which generates individual value over time. 

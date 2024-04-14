@@ -22,6 +22,12 @@
 // SOFTWARE.
 //
 
+/*
+  TODO: Work on Page Navigator.
+
+*/
+
+
 // server application module
 const express = require('express')
 
@@ -50,6 +56,10 @@ server.use(express.json())
 
 // cookies
 server.use(cookies())
+
+// Serve static content from /static
+server.use('/static', express.static(path.resolve('./static')))
+server.use('/favicon.ico', express.static(path.resolve('./favicon.ico')))
 
 // private configuration
 require("dotenv").config();
@@ -87,6 +97,12 @@ async function replace(filePath, siteMeta) {
     return data;
 }
 
+/**
+ * A place to store a dict of accounts with active sessions.
+ * 
+ * `key = userName`
+ * `value = UserAccount`
+ */
 var loggedIn = {}
 
 class siteMetadata
@@ -135,6 +151,14 @@ class siteMetadata
   }
 
   /**
+   * Push simple key/instruction to variables
+   * 
+   * @param {string} key 
+   * @param {string} instruction 
+   */
+  pushVariable(key, instruction) { this.variablesToReplace[key] = instruction; return }
+
+  /**
    * Pushes UAC data to keys in variablesToReplace
    */
   async UACHandler(req)
@@ -155,6 +179,8 @@ class siteMetadata
         const uac = await new Users.UserAccount(undefined, req.ip, 'Guest')
         this.uac = uac
 
+        console.log('! Access Denied; return Guest account')
+
         return this.pushUACToVariables()
 
       } else {
@@ -167,6 +193,8 @@ class siteMetadata
 
           this.uac = loggedIn[userName]
 
+          console.log(`Returning Account: ${this.uac.userName}`)
+
           return this.pushUACToVariables()
 
         } else {
@@ -177,6 +205,9 @@ class siteMetadata
           loggedIn[userName] = uac
           this.uac = uac
 
+          console.log(`! Access Confirmed: Welcome Back, ${this.uac.userName}`)
+          this.uac.debug()
+
           return this.pushUACToVariables()
         }
 
@@ -184,25 +215,56 @@ class siteMetadata
      
     // no cookies => guest account
     } else {
+
       const uac = await new Users.UserAccount(undefined, req.ip, 'Guest')
       this.uac = uac
+
+      console.log('! Guest Account: No Cookies')
+
       return this.pushUACToVariables()
     }
     
   }
 }
 
+// get /uac
+async function userAccessControlPage(req, res) 
+{
+
+  var siteMeta = new siteMetadata()
+  siteMeta.pushVariable('SITENAME', 'User Access Control')
+
+  var uac = await siteMeta.UACHandler(req)
+
+  const page_header = await replace('./private/header.html', siteMeta)
+  const page_main = await replace('./private/userAccessControlPage.html', siteMeta)
+
+  const page_secondary = await readFile('./private/uacLogin.html')
+
+  let data = page_header + page_main + page_secondary
+
+  res.status(200).send(data)
+
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
+
+  console.log(`200 OK /uac => ${req.ip}`)
+}
+
 // get /
-async function homepage(req, res) {
+async function homepage(req, res) 
+{
 
   // new siteMeta class
   var siteMeta = new siteMetadata()
 
   // get user account and variables from cookies
-  const uac = await siteMeta.UACHandler(req)
+  var uac = await siteMeta.UACHandler(req)
 
-  uac.debug()
+  //uac.debug()
 
+  
   const page_header = await replace('./private/header.html', siteMeta)
   const page_main = await replace('./private/homepage.html', siteMeta)
 
@@ -210,25 +272,25 @@ async function homepage(req, res) {
  
   // send res status 200 with data
   res.status(200).send(data)
-  console.log(`200 OK => ${req.ip}`)
+
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
+
+  console.log(`200 OK / => ${req.ip}`)
 }
 
 // get /
-server.get('/', (req, res) => {
-  homepage(req, res)
-})
+server.get('/', (req, res) => { homepage(req, res) })
+
+// get /uac
+server.get('/uac', (req, res) => { userAccessControlPage(req, res) })
 
 // get /test
 server.get('/test', (req, res) => {
     console.log('/, 200=>OK')
     res.sendFile(path.resolve('./test_page.html'))
 })
-
-
-
-// Serve static content from /static
-server.use('/static', express.static(path.resolve('./static')))
-server.use('/favicon.ico', express.static(path.resolve('./favicon.ico')))
 
 // Start Server Listener
 server.listen(

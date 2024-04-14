@@ -3,7 +3,7 @@
     <body onload="getUptime()">
         <div class="display-topleft">
             <span title="Home"><a href="/">${SITE}//</a> <b>${VERSION}</b></span>
-            <a href="https://github.com/shir0tetsuo/hybridledger/commits/main"> <i class="devicon-git-plain"></i></a>
+            <a class="phased" title="Git Commits" href="https://github.com/shir0tetsuo/hybridledger/commits/main"> <i class="devicon-git-plain"></i></a>
         </div>
 
         <div class="center-pos-align">
@@ -51,7 +51,7 @@
         <blockquote>
             <div class="about-backed">
                 <span id="serverstart" style="display:none;">${EXACTSERVERSTART}</span>
-                <span title="Server Uptime. Under 120M: Expect Server Restart" id="uptime">Up for --- minutes.</span>
+                <span title="Server Uptime. Under 120M: Expect Server Restart. Server may restart anytime." id="uptime">Up for --- minutes.</span>
             </div>
         </blockquote>
     </body>
