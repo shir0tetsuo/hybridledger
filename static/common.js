@@ -19,3 +19,13 @@ function getUptime()
         getUptime();
     },1000);
 }
+
+function logout()
+{
+    document.cookie = "username=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "private=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    setTimeout(() => {
+        window.location.href = "/";
+    },1000);
+    document.getElementById("toast").innerHTML = "Logout Successful.";
+}

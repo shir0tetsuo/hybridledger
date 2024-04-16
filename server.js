@@ -144,7 +144,7 @@ class siteMetadata
     this.variablesToReplace['displayEmail'] = this.uac.displayEmail
 
     if (parseInt(this.uac.accountType) > 0) {
-      this.variablesToReplace['LoginStatus'] = `(Authorized as ${accountTypes[this.uac.accountType]})`
+      this.variablesToReplace['LoginStatus'] = `(Authorized as ${accountTypes[this.uac.accountType]} - <a class="phasedYel" href="/logout">Logout</a>)`
     } else {
       this.variablesToReplace['LoginStatus'] = '(Not Logged In - Minting Disabled)'
     }
@@ -270,12 +270,6 @@ server.get('/uac', async(req, res) => {
     page_secondary = await readFile('./private/uacLogin.html')
   }
 
-  if (uac.accountType > 0) {
-    const page_secondary = await readFile('./private/uacLogin.html')
-  } else {
-    const page_secondary = await replace('./private/uacProfile.html', siteMeta)
-  }
-
   let data = page_header + page_main + page_secondary
 
   res.status(200).send(data)
@@ -285,6 +279,16 @@ server.get('/uac', async(req, res) => {
   // cleanup memory
   siteMeta = undefined
   uac = undefined
+})
+
+server.get('/logout', async(req, res) => { 
+  var siteMeta = new siteMetadata()
+  siteMeta.pushVariable('SITENAME', 'User Access Control')
+  const page_header = await replace('./private/header.html', siteMeta)
+  const page_main = await readFile('./private/logout.html')
+
+  let data = page_header + page_main
+  res.status(200).send(data)
 })
 
 
@@ -316,7 +320,7 @@ server.post('/uac/login', async(req, res) => {
   if (auth == 0) {
 
     return res.status(200).send({
-      response: "Successful login!",
+      response: "Successful login! Please wait while we transfer the session.",
       user: userName,
       private: uac.privatePassword,
       reload: true
@@ -330,7 +334,7 @@ server.post('/uac/login', async(req, res) => {
 
       if (registration == true) {
         return res.status(200).send({
-          response: "Welcome!",
+          response: "Welcome! Please wait while we transfer the session.",
           user: userName,
           private: uac.privatePassword,
           reload: true
