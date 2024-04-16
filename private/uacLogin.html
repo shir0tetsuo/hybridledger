@@ -1,5 +1,5 @@
 <html>
-    <body>
+<body>
         <blockquote>
             <div class="loginbox">
                 <form>
@@ -12,6 +12,12 @@
                     <br>
                     <input title="A good password is a long password only you know." id="password" type="password" size="40">
                     <br><br>
+                    <div style="display: none;" id="confirmpassword">
+                        <b>Confirm Password</b>
+                        <br>
+                        <input title="A good password is a long password only you know." id="passwordconfirm" type="password" size="40">
+                        <br><br>
+                    </div>
                     <div class="submitbox">
                         <input id="submit" type="button" value="Login/Register">
                     </div>
@@ -20,5 +26,49 @@
                 
             </div>
         </blockquote>
+
+        <div class="centered extrusionbase">
+            <div style="padding-left: 50px; padding-right: 50px;" class="about-backed">
+                <span id="toast">---</span>
+            </div>
+            <span style="float: left; z-index: 3;" class="extrude">
+                Server messages will appear here.
+            </span>
+        </div>
+        <!-- jQuery submit -->
+
+        <script>
+            $(document).ready(function(){
+                $("#submit").click(function(){
+                    $.ajax({
+                        type: "POST",
+                        url: "/uac/login",
+                        data: { user_name: $("#user_name").val(), password: $("#password").val(), confirmpassword: $("#passwordconfirm").val() },
+                        success: function(data){
+                            // actions
+                            if (data.confirmpass) {
+                                $("#confirmpassword").css("display", "block");
+                            }
+
+                            if (data.private) {
+                                document.cookie = "userName=" + data.user + "; SameSite=none; path=/; Secure"
+                                document.cookie = "private=" + data.private + "; SameSite=none; path=/; Secure";
+                            }
+
+                            if (data.reload) {
+                                setTimeout(function(){ location.reload(); }, 5000);
+                            }
+
+                            // do response
+                            setTimeout(() => {
+                                $("#toast").html('---');
+                            }, 10000);
+                            $("#toast").html(data.response);
+                        }
+                    });
+                });
+            });
+        </script>
+        <!-- jQuery submit EOF -->
     </body>
 </html>

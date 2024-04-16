@@ -52,6 +52,8 @@ const server = express();
 const port = 8155;
 
 // include json
+server.use(bparse.urlencoded({ extended: true }));
+server.use(bparse.json());
 server.use(express.json()) 
 
 // cookies
@@ -141,7 +143,7 @@ class siteMetadata
     this.variablesToReplace['emoji'] = this.uac.emoji
     this.variablesToReplace['displayEmail'] = this.uac.displayEmail
 
-    if (this.uac.accountType > 0) {
+    if (parseInt(this.uac.accountType) > 0) {
       this.variablesToReplace['LoginStatus'] = `(Authorized as ${accountTypes[this.uac.accountType]})`
     } else {
       this.variablesToReplace['LoginStatus'] = '(Not Logged In - Minting Disabled)'
@@ -165,7 +167,7 @@ class siteMetadata
   {
     // cookies required to get uac
     let userName = req.cookies.userName
-    let privatePassword = req.cookies.hashedPassword
+    let privatePassword = req.cookies.private
 
     // has cookies
     if ((userName && privatePassword) && userName != undefined && privatePassword != undefined) {
@@ -176,7 +178,7 @@ class siteMetadata
       // non-match: Create guest user uac
       if (!access || access == false) { 
 
-        const uac = await new Users.UserAccount(undefined, req.ip, 'Guest')
+        const uac = await new Users.UserAccount(undefined, 'Guest')
         this.uac = uac
 
         console.log('! Access Denied; return Guest account')
@@ -199,7 +201,7 @@ class siteMetadata
 
         } else {
           
-          const uac = await new Users.UserAccount(undefined, req.ip, userName)
+          const uac = await new Users.UserAccount(undefined, userName)
           await uac.authorizePrivate(privatePassword)
 
           loggedIn[userName] = uac
@@ -216,7 +218,7 @@ class siteMetadata
     // no cookies => guest account
     } else {
 
-      const uac = await new Users.UserAccount(undefined, req.ip, 'Guest')
+      const uac = await new Users.UserAccount(undefined, 'Guest')
       this.uac = uac
 
       console.log('! Guest Account: No Cookies')
@@ -227,35 +229,8 @@ class siteMetadata
   }
 }
 
-// get /uac
-async function userAccessControlPage(req, res) 
-{
-
-  var siteMeta = new siteMetadata()
-  siteMeta.pushVariable('SITENAME', 'User Access Control')
-
-  var uac = await siteMeta.UACHandler(req)
-
-  const page_header = await replace('./private/header.html', siteMeta)
-  const page_main = await replace('./private/userAccessControlPage.html', siteMeta)
-
-  const page_secondary = await readFile('./private/uacLogin.html')
-
-  let data = page_header + page_main + page_secondary
-
-  res.status(200).send(data)
-
-  // cleanup memory
-  siteMeta = undefined
-  uac = undefined
-
-  console.log(`200 OK /uac => ${req.ip}`)
-}
-
 // get /
-async function homepage(req, res) 
-{
-
+server.get('/', async(req, res) => { 
   // new siteMeta class
   var siteMeta = new siteMetadata()
 
@@ -263,7 +238,6 @@ async function homepage(req, res)
   var uac = await siteMeta.UACHandler(req)
 
   //uac.debug()
-
   
   const page_header = await replace('./private/header.html', siteMeta)
   const page_main = await replace('./private/homepage.html', siteMeta)
@@ -273,24 +247,136 @@ async function homepage(req, res)
   // send res status 200 with data
   res.status(200).send(data)
 
+  console.log(`200 OK / => ${uac.userName}`)
   // cleanup memory
   siteMeta = undefined
   uac = undefined
-
-  console.log(`200 OK / => ${req.ip}`)
-}
-
-// get /
-server.get('/', (req, res) => { homepage(req, res) })
+})
 
 // get /uac
-server.get('/uac', (req, res) => { userAccessControlPage(req, res) })
+server.get('/uac', async(req, res) => { 
+  var siteMeta = new siteMetadata()
+  siteMeta.pushVariable('SITENAME', 'User Access Control')
 
-// get /test
-server.get('/test', (req, res) => {
-    console.log('/, 200=>OK')
-    res.sendFile(path.resolve('./test_page.html'))
+  var uac = await siteMeta.UACHandler(req)
+
+  const page_header = await replace('./private/header.html', siteMeta)
+  const page_main = await replace('./private/userAccessControlPage.html', siteMeta)
+
+  let page_secondary
+  if (uac.accountType > 0) {
+    page_secondary = await replace('./private/uacProfile.html', siteMeta)
+  } else {
+    page_secondary = await readFile('./private/uacLogin.html')
+  }
+
+  if (uac.accountType > 0) {
+    const page_secondary = await readFile('./private/uacLogin.html')
+  } else {
+    const page_secondary = await replace('./private/uacProfile.html', siteMeta)
+  }
+
+  let data = page_header + page_main + page_secondary
+
+  res.status(200).send(data)
+
+  console.log(`200 OK /uac => ${uac.userName}`)
+
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
 })
+
+
+
+
+
+/**
+ * 
+ * POST login
+ * 
+ */
+server.post('/uac/login', async(req, res) => {
+  let userName = req.body.user_name
+  let plaintextPasswd = req.body.password
+  let confirmpassword = req.body.confirmpassword
+
+  if (!userName || userName == undefined || userName.length == 0) {
+
+    return res.status(200).send({
+      response: "There's no username provided.",
+    })
+
+  }
+
+  var uac = await new Users.UserAccount(plaintextPasswd, userName)
+
+  let auth = await uac.authorizePlaintxt()
+
+  if (auth == 0) {
+
+    return res.status(200).send({
+      response: "Successful login!",
+      user: userName,
+      private: uac.privatePassword,
+      reload: true
+    })
+
+  } else if (auth == 1) {
+
+    if (confirmpassword == plaintextPasswd) {
+
+      let registration = await uac.register()
+
+      if (registration == true) {
+        return res.status(200).send({
+          response: "Welcome!",
+          user: userName,
+          private: uac.privatePassword,
+          reload: true
+        })
+      } else {
+        return res.status(200).send({
+          response: "Couldn't generate user registration."
+        })
+      }
+
+      
+      
+    } else {
+
+      return res.status(200).send({
+        response: "Please confirm your password to register your account.",
+        confirmpass: true
+      })
+
+    }
+    
+  } else if (auth == 2) {
+
+    return res.status(200).send({
+      response: "No password provided.",
+    })
+
+  } else if (auth == 3) {
+
+    return res.status(200).send({
+      response: "Password Non-match",
+    })
+
+  } else {
+
+    return res.status(200).send({
+      response: "Something went wrong Please contact your administrator.",
+    })
+
+  }
+
+})
+
+
+
+
 
 // Start Server Listener
 server.listen(

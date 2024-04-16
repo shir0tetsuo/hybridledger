@@ -46,8 +46,7 @@ const Users = sequelize.define('Users', {
     accountType: { type: Sequelize.INTEGER, defaultValue: 0 },
     emoji: { type: Sequelize.STRING },
     displayEmail: { type: Sequelize.BOOLEAN, allowNull: false, defaultValue: false },
-    privatePassword: { type: Sequelize.STRING, allowNull: false },
-    lastIP: { type: Sequelize.STRING }
+    privatePassword: { type: Sequelize.STRING, allowNull: false }
 })
 
 const Ledgers = sequelize.define('HybridLedgers', {

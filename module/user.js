@@ -64,7 +64,7 @@ async function suspend(userUUID)
 
 class UserAccount
 {
-    constructor(plaintextPasswd, lastIP = 'localhost', username='Guest', userUUID=uuidv4())
+    constructor(plaintextPasswd, username='Guest', userUUID=uuidv4())
     {
         // new users get new UUID
         this.userUUID = userUUID
@@ -88,7 +88,6 @@ class UserAccount
 
         this.displayEmail = false
 
-        this.lastIP = lastIP
         this.sessionKey = uuidv4() // for {sessionKey:UserAccount}
     }
 
@@ -103,7 +102,6 @@ class UserAccount
         console.log('USEREMAIL:',this.userEmail)
         console.log('EMOJI:',this.emoji)
         console.log('DISPLAYEMAIL:',this.displayEmail)
-        console.log('LASTIP:',this.lastIP)
         console.log('SESSIONKEY:',this.sessionKey)
         if (!this.passwordToCompare || this.passwordToCompare == undefined)
         {
@@ -181,31 +179,44 @@ class UserAccount
      * @requires this.passwordToCompare
      * @returns Promise {boolean}
      */
-    async register() 
-    {
-        // Generate the Private Password
-        let privatePassword = bcrypt.hashSync(this.passwordToCompare, saltRounds);
-        
+    async register() {
         try {
-            const User = db.Users.create({
-                userUUID: this.userUUID,
-                userName: this.userName,
-                userEmail: this.userEmail,
-                publicName: this.publicName,
-                accountType: 1,
-                emoji: this.emoji,
-                displayEmail: this.displayEmail,
-                privatePassword: privatePassword,
-                lastIP: this.lastIP            
-            })
+          // Generate the Private Password
+          let privatePassword = bcrypt.hashSync(this.passwordToCompare, saltRounds);
+      
+          // Create the new user in the database
+          const User = await db.Users.create({
+            userUUID: this.userUUID,
+            userName: this.userName,
+            userEmail: this.userEmail,
+            publicName: this.publicName,
+            accountType: 1,
+            emoji: this.emoji,
+            displayEmail: this.displayEmail,
+            privatePassword: privatePassword
+          });
+      
+          // Set the account type to 1
+          this.accountType = 1;
+      
+          // Erase the plaintext password
+          this.passwordToCompare = undefined;
+      
+          // Set the private password
+          this.privatePassword = privatePassword;
+      
+          // Debug the UserAccount
+          this.debug();
+      
+          // Return true to indicate that the registration was successful
+          return true;
         } catch (e) {
-            console.log(e)
-            return false
-        } finally {
-            this.passwordToCompare = undefined;
-            return true
+          console.log(e);
+      
+          // Return false to indicate that the registration failed
+          return false;
         }
-    }
+      }
 
     async getUserLastBlock()
     {
@@ -260,16 +271,19 @@ class UserAccount
 
     async authorizePrivate(privatePassword) {
         const User = await getUser(this.userName);
-        if (this.privatePassword == user.privatePassword) {
+        if (User.privatePassword == privatePassword) {
             this.userUUID = User.userUUID
             this.userEmail = User.userEmail
             this.publicName = User.publicName
             this.accountType = User.accountType
             this.emoji = User.emoji
             this.displayEmail = User.displayEmail
-            await db.Users.update({lastIP: this.lastIP},{where:{userName: User.userName}})
+            this.privatePassword = privatePassword
+            //await db.Users.update({lastIP: this.lastIP},{where:{userName: User.userName}})
             return true
-        } else { return false }
+        } else { 
+            console.log('! Private Password Mismatch !')
+            return false }
     }
 
     /**
@@ -279,11 +293,11 @@ class UserAccount
      */
     async authorizePlaintxt() {
         try {
-            if (!this.passwordToCompare || this.passwordToCompare == undefined) { console.log('! No Password'); return }
+            if (!this.passwordToCompare || this.passwordToCompare == undefined) { console.log('! No Password'); return 2 }
     
             const User = await getUser(this.userName);
     
-            if (!User) { console.log('! No User'); return } // Don't login if user doesn't exist
+            if (!User) { console.log('! No User'); return 1 } // Don't login if user doesn't exist
             else {
                 // If the user exists, compare the plaintext password against the private hashed password;
                 if (bcrypt.compareSync(this.passwordToCompare, User.privatePassword)) {
@@ -297,13 +311,19 @@ class UserAccount
                     
                     // Destroy plaintext password
                     this.passwordToCompare = undefined
+
+                    this.privatePassword = User.privatePassword
     
                     // Push Last IP Address to database
-                    await db.Users.update({lastIP: this.lastIP},{where:{userName: User.userName}})
+                    //await db.Users.update({lastIP: this.lastIP},{where:{userName: User.userName}})
+                    return 0
+                } else {
+                    return 3
                 }
             }
         } catch (error) {
             console.log(error)
+            return 4
         }
     }
 
@@ -362,14 +382,13 @@ class UserAccount
  * `{sessionKey (from cookie) : UserAccount}`
  * 
  * @param {string} plaintextPasswd 
- * @param {string} lastIP 
  * @param {string} username 
  * @returns {UserAccount}
  */
-async function callUserAccountAuthPT(plaintextPasswd, lastIP, username)
+async function callUserAccountAuthPT(plaintextPasswd, username)
 {
     // Init UserAccount Class
-    var uac = new UserAccount(plaintextPasswd, lastIP, username)
+    var uac = new UserAccount(plaintextPasswd, username)
 
     // Check user, passwd against db, update uac
     await uac.authorizePlaintxt();
