@@ -83,6 +83,8 @@ class UserAccount
         this.vertD = undefined // deterministic
         this.emoji = '⛩️' // User-Set Default
 
+        this.created = 'Unknown' // Update from db .createdAt
+
         // erased at login/registration
         this.passwordToCompare = plaintextPasswd
 
@@ -103,6 +105,7 @@ class UserAccount
         console.log('EMOJI:',this.emoji)
         console.log('DISPLAYEMAIL:',this.displayEmail)
         console.log('SESSIONKEY:',this.sessionKey)
+        console.log('CREATED:', this.created)
         if (!this.passwordToCompare || this.passwordToCompare == undefined)
         {
             console.log('NO PASSWORD TO COMPARE')
@@ -279,6 +282,7 @@ class UserAccount
             this.emoji = User.emoji
             this.displayEmail = User.displayEmail
             this.privatePassword = privatePassword
+            this.created = User.createdAt
             //await db.Users.update({lastIP: this.lastIP},{where:{userName: User.userName}})
             return true
         } else { 
@@ -308,6 +312,7 @@ class UserAccount
                     this.accountType = User.accountType
                     this.emoji = User.emoji
                     this.displayEmail = User.displayEmail
+                    this.created = User.createdAt
                     
                     // Destroy plaintext password
                     this.passwordToCompare = undefined

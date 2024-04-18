@@ -1,0 +1,26 @@
+<html>
+
+<body>
+    <blockquote>
+        <div class="loginbox">
+            <div style="z-index: 1; left: -10px; top: 11px; position: relative; float: left;" >
+                ${emoji} 
+            </div>
+            <div style="z-index: 2; left: -3px; top: 10px; position: relative; float: left;">
+                <span class="material-symbols-outlined">
+                    fingerprint
+                </span>
+            </div>
+            <div style="z-index: 3;">
+                @${userName} <level title="name displayed">(${publicName})</level><br>
+                <a href="/user/${userUUID}" class="phasedYel" title="UUID">${userUUID}</a>
+                
+            </div>
+            <br>Email: ${userEmail}
+            <br>Account Created: ${uacCreatedAt}
+            
+        </div>
+    </blockquote>
+</body>
+
+</html>

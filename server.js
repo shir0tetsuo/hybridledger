@@ -24,7 +24,7 @@
 
 /*
   TODO: Work on Page Navigator.
-
+  TODO: Make /contact, /gate, and /user/uuid.
 */
 
 
@@ -142,6 +142,7 @@ class siteMetadata
     this.variablesToReplace['accountTypeStr'] = accountTypes[this.uac.accountType]
     this.variablesToReplace['emoji'] = this.uac.emoji
     this.variablesToReplace['displayEmail'] = this.uac.displayEmail
+    this.variablesToReplace['uacCreatedAt'] = this.uac.created
 
     if (parseInt(this.uac.accountType) > 0) {
       this.variablesToReplace['LoginStatus'] = `(Authorized as ${accountTypes[this.uac.accountType]} - <a class="phasedYel" href="/logout">Logout</a>)`
@@ -261,13 +262,13 @@ server.get('/uac', async(req, res) => {
   var uac = await siteMeta.UACHandler(req)
 
   const page_header = await replace('./private/header.html', siteMeta)
-  const page_main = await replace('./private/userAccessControlPage.html', siteMeta)
+  const page_main = await replace('./private/uac/userAccessControlPage.html', siteMeta)
 
   let page_secondary
   if (uac.accountType > 0) {
-    page_secondary = await replace('./private/uacProfile.html', siteMeta)
+    page_secondary = await replace('./private/uac/uacProfile.html', siteMeta)
   } else {
-    page_secondary = await readFile('./private/uacLogin.html')
+    page_secondary = await readFile('./private/uac/uacLogin.html')
   }
 
   let data = page_header + page_main + page_secondary
@@ -281,11 +282,16 @@ server.get('/uac', async(req, res) => {
   uac = undefined
 })
 
+// Boundary between systems for testing and info absorption
+server.get('/gate', async(req, res) => {
+
+})
+
 server.get('/logout', async(req, res) => { 
   var siteMeta = new siteMetadata()
   siteMeta.pushVariable('SITENAME', 'User Access Control')
   const page_header = await replace('./private/header.html', siteMeta)
-  const page_main = await readFile('./private/logout.html')
+  const page_main = await readFile('./private/uac/logout.html')
 
   let data = page_header + page_main
   res.status(200).send(data)

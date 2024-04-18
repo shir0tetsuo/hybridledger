@@ -1,6 +1,18 @@
 <html>
 <body>
+        
+
         <blockquote>
+            <div style="padding-left: 50px;">
+                <div style="left: -10px; top: -10px; position: relative; float: left;">
+                <span onclick="has_js()"><span style="border-radius: 50%; border: 2px solid #fff; color: #fff; background-color: #000;" class="material-symbols-outlined">
+                    cookie
+                </span></span>
+                
+                </div>
+    
+                JavaScript & Cookies must be enabled to continue.
+            </div>
             <div class="loginbox">
                 <form>
                     Register a new account or login below.<br><br>
@@ -10,7 +22,7 @@
                     <br><br>
                     <b>Password</b>
                     <br>
-                    <input title="A good password is a long password only you know." id="password" type="password" size="40">
+                    <input onkeydown="if (event.keyCode == 13) { document.getElementById('submit').click(); }" title="A good password is a long password only you know." id="password" type="password" size="40">
                     <br><br>
                     <div style="display: none;" id="confirmpassword">
                         <b>Confirm Password</b>
@@ -35,6 +47,8 @@
                 Server messages will appear here.
             </span>
         </div>
+
+        
         <!-- jQuery submit -->
 
         <script>
