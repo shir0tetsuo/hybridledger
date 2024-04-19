@@ -1,3 +1,16 @@
+function getTimeleft(timeleft)
+{
+    var days = Math.floor(timeleft / 86400);
+    var hours = Math.floor((timeleft % 86400) / 3600);
+    var minutes = Math.floor((timeleft % 3600) / 60);
+    var seconds = Math.floor(timeleft % 60);
+    document.getElementById('minttime').innerHTML = `${days}:${hours}:${minutes}:${seconds}`
+    setTimeout(() => {
+        console.warn('timeleft_tick')
+        getTimeleft(timeleft)
+    }, 1000)
+}
+
 function getUptime()
 {
     // get the innerHTML of element ID "uptime"
@@ -64,9 +77,4 @@ function toggle(elementID) {
     } else {
         x.style.display = "block";
     }
-}
-
-function terminalWarning()
-{
-    console.warn("STOP! Don't paste things into your terminal.");
 }

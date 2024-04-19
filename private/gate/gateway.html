@@ -1,0 +1,89 @@
+<html>
+    <body>
+        <div class="topnavigator">
+            <!-- left 20% -->
+            <div class="topleftbox">
+
+                <!-- home -->
+                <div class="topnavleft"> 
+                    <div>
+                        <span class="material-symbols-outlined">
+                            <a title="Home" href="/">home_and_garden</a>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Commands -->
+                <div class="topnavleft"> 
+                    <div>
+                        <span class="material-symbols-outlined">
+                            <a class="phasedYel" title="Commands" href="#">keyboard_command_key</a>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- uac-access -->
+                <div class="topnavleft"> 
+                    <div title="User Access Control">
+                        <span class="material-symbols-outlined">
+                            <a class="phasedBlue" href="/uac">id_card</a>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- uac -->
+                <div class="topnavleft"> 
+                    <div title="${accountTypeStr} @${userName}" class="roundNavBlue">
+                        <span class="material-symbols-outlined">
+                            ${loggedIcon}
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="toprightbox">
+                <!-- Minting -->
+                <div class="topnavright"> 
+                    <div>
+                        <span class="material-symbols-outlined">
+                            <a class="phased" title="Mint" href="#">assured_workload</a>
+                        </span>
+                    </div>
+                </div>
+                <div id="minttime" class="toprightmint">
+                    <div style="z-index: 22; position: fixed; top: 5px; right: 5px;" class="bouncing-loader"><div></div><div></div></div>
+                </div>
+            </div>
+
+
+        </div>
+            
+
+        <div class="toppage">
+            Under Construction
+        </div>
+        
+    </body>
+</html>
+
+<!-- jquery /gate/minttime for time left to mint and return how much time remains as innerhtml of minttime -->
+<script type="text/JavaScript">
+    $(document).ready(function(){
+        $.ajax({
+            type: "POST",
+            url: "/gate/minttime",
+            data: {},
+            success: function(data) {
+                if(data) {
+                    if (data.infinite == true) {
+                        document.getElementById('minttime').innerHTML = 'Infinite'
+                    }
+                    if (data.timeleft != undefined) {
+                        getTimeleft(data.timeleft)
+                    }
+                }
+            }
+        })
+    })
+</script>

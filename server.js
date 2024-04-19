@@ -25,6 +25,8 @@
 /*
   TODO: Work on Page Navigator.
   TODO: Make /contact, /gate, and /user/uuid.
+  Remember that changes to user attributes must be reflected in
+  database as well as active login (loggedIn) class
 */
 
 
@@ -67,6 +69,12 @@ server.use('/favicon.ico', express.static(path.resolve('./favicon.ico')))
 require("dotenv").config();
 
 let application_start = new Date();
+
+
+
+/// Begin Main Application ///
+
+
 
 /**
  * Read file from fs like from `'/private'`
@@ -145,9 +153,11 @@ class siteMetadata
     this.variablesToReplace['uacCreatedAt'] = this.uac.created
 
     if (parseInt(this.uac.accountType) > 0) {
-      this.variablesToReplace['LoginStatus'] = `(Authorized as ${accountTypes[this.uac.accountType]} - <a class="phasedYel" href="/logout">Logout</a>)`
+      this.variablesToReplace['LoginStatus'] = `(Authorized as ${accountTypes[this.uac.accountType]} - <a class="phasedBlue" href="/logout">Logout</a>)`
+      this.variablesToReplace['loggedIcon'] = 'key'
     } else {
       this.variablesToReplace['LoginStatus'] = '(Not Logged In - Minting Disabled)'
+      this.variablesToReplace['loggedIcon'] = 'key_off'
     }
 
     return this.uac
@@ -196,7 +206,7 @@ class siteMetadata
 
           this.uac = loggedIn[userName]
 
-          console.log(`Returning Account: ${this.uac.userName}`)
+          console.log(`Returning Account Authorization: ${this.uac.userName}`)
 
           return this.pushUACToVariables()
 
@@ -282,11 +292,55 @@ server.get('/uac', async(req, res) => {
   uac = undefined
 })
 
-// Boundary between systems for testing and info absorption
+/**
+ * 
+ * Boundary between systems for testing and info absorption
+ * 
+ */
 server.get('/gate', async(req, res) => {
+  var siteMeta = new siteMetadata()
+  siteMeta.pushVariable('SITENAME', 'Gateway')
 
+  var uac = await siteMeta.UACHandler(req)
+
+  const page_header = await replace('./private/header.html', siteMeta)
+  const page_main = await replace('./private/gate/gateway.html', siteMeta)
+
+  let data = page_header + page_main
+  res.status(200).send(data)
+
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
 })
 
+server.post('/gate/minttime', async(req, res) => {
+
+  var siteMeta = new siteMetadata()
+  var uac = await siteMeta.UACHandler(req)
+
+  let time_left = await uac.timeToMint()
+
+  if (uac.accountType > 0) {
+    res.status(200).send({
+      timeleft: time_left
+    })
+    
+  } else {
+    res.status(200).send({
+      infinite: true
+    })
+  }
+
+  
+})
+
+/**
+ * 
+ * Logout sequence directs user to page and lets JS delete cookies.
+ * get /logout
+ * 
+ */
 server.get('/logout', async(req, res) => { 
   var siteMeta = new siteMetadata()
   siteMeta.pushVariable('SITENAME', 'User Access Control')
@@ -295,15 +349,17 @@ server.get('/logout', async(req, res) => {
 
   let data = page_header + page_main
   res.status(200).send(data)
+
+  // cleanup memory
+  siteMeta = undefined
 })
-
-
-
-
 
 /**
  * 
- * POST login
+ * login system
+ * post /uac/login
+ * 
+ * Returns the user's hashed password as a key.
  * 
  */
 server.post('/uac/login', async(req, res) => {
