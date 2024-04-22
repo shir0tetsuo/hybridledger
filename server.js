@@ -304,9 +304,10 @@ server.get('/gate', async(req, res) => {
   var uac = await siteMeta.UACHandler(req)
 
   const page_header = await replace('./private/header.html', siteMeta)
-  const page_main = await replace('./private/gate/gateway.html', siteMeta)
+  const page_nav = await replace('./private/gate/navigator.html', siteMeta)
 
-  let data = page_header + page_main
+
+  let data = page_header + page_nav
   res.status(200).send(data)
 
   // cleanup memory
@@ -438,6 +439,216 @@ server.post('/uac/login', async(req, res) => {
 
   }
 
+})
+
+/**
+ * 
+ * Below is general QR Generation handling
+ * within /hl/addr/index/qr,
+ * Empty QR will always point to /b/empty,
+ * or will return a 404 if there is an index mismatch;
+ * This should never happen, but can happen
+ * if users manually enter in a bad
+ * index for an address.
+ * 
+ * @param {string} address 
+ * @param {number} index 
+ * @returns {QRCode.toBuffer}
+ */
+async function generateQRObject(address, index) {
+  return HybridLedgers.callHybridLedger(address).then((HL) => {
+    let block = HL.ledger[index]
+
+    if (!block || block == undefined) {
+      return
+    } else {
+      return block.getQRCode()
+    }
+    
+  })
+}
+
+server.get('/hl/:address/:index/qr', async (req, res) => {
+
+  // no db handling, read by class only
+
+  const { address, index } = req.params;
+
+  let QRCode = await generateQRObject(address, index)
+
+  if (!QRCode || QRCode == undefined) {
+    res.status(404).send({ error: "Cannot display image, index out of range." })
+  } else {
+    res.setHeader('Content-Type', 'image/png')
+    res.status(200).send(QRCode)
+  }
+
+
+})
+
+server.get('/b/:uuid', async (req, res) => {
+  const { uuid } = req.params;
+
+  var siteMeta = new siteMetadata()
+
+  siteMeta.pushVariable('SITENAME', 'Block')
+
+  var uac = await siteMeta.UACHandler(req)
+
+  let time_left = await uac.timeToMint()
+
+  let dbBlock = await db.Ledgers.findOne({where: { uuid: uuid }})
+
+  let page_header = await replace('./private/header.html', siteMeta)
+
+  let position;
+  let index;
+  if (!dbBlock || dbBlock == undefined) {
+    position = '0,0'
+    index = 0
+  } else {
+    position = dbBlock.position
+    index = dbBlock.index
+  }
+
+  let blockQR = process.env.SITEADDRESS + 'hl/' + position + '/' + index + '/qr';
+
+  //let blockQR = await 
+
+  siteMeta.pushVariable('blockQR', blockQR)
+
+  let page_main = await replace('./private/gate/block.html', siteMeta)
+
+  let data = page_header + page_main
+  
+  console.log('success.')
+  res.status(200).send(data)
+
+})
+
+server.get('/lastblock/:address', async (req, res) => {
+
+  const { address } = req.params;
+
+  var siteMeta = new siteMetadata()
+  var uac = await siteMeta.UACHandler(req)
+
+  let time_left = await uac.timeToMint()
+
+  if (address != undefined) {
+    HybridLedgers.callHybridLedger(address).then((HL) => {
+
+      let block = HL.lastBlock
+    
+      let value = HL.lastBlock.getValue()
+    
+      let difficulty = HL.lastBlock.getDifficulty()
+
+      let blockHash = block.getHash();
+
+      let HLValue = HL.getValue();
+
+      let HLPristine = HL.checkPristine();
+
+      var OWNERSHIP;
+
+      Users.getUserByUUID(block.ownership).then(ownerData => {
+        if (!ownerData || ownerData == undefined) {
+          OWNERSHIP = {
+            accountType:0,
+            userName:'None',
+            publicName:'None',
+            emoji:'',
+            created: 'Unknown'
+          }
+        } else {
+          OWNERSHIP = {
+            accountType:ownerData.accountType,
+            userName:ownerData.userName,
+            publicName:ownerData.publicName,
+            emoji:ownerData.emoji,
+            created:ownerData.createdAt
+          }
+        }
+        //block.debug()
+
+        var AUTHORIZED;
+
+        // case ownership 0/Empty: grant authorization to non-guest account
+        if (block.ownership == '0') {
+          if (uac.accountType > 0) {
+            AUTHORIZED = true
+          } else {
+            AUTHORIZED = false
+          }
+        
+        // case ownership belongs to someone else: check mint time left,
+        // ensure user account is authorized to mint,
+        // and ensure that the block is not locked.
+        } else {
+          if (block.ownership == uac.userUUID && time_left <= 0) {
+            if (uac.accountType > 0 && block.blockType != 5) {
+              AUTHORIZED = true
+            } else {
+              AUTHORIZED = false
+            }
+          } else {
+            AUTHORIZED = false
+          }
+        }
+    
+        return res.status(200).send({
+
+          ledger: {
+            size: HL.ledger.length,
+            position: block.position,
+            ledgerOwnership: block.ownership,
+            ownershipAccount: OWNERSHIP,
+            value: HLValue,
+            pristine: HLPristine,
+          },
+
+          block: {
+            index: block.index,
+            blockType: block.blockType,
+            data: block.data,
+            previousHash: block.previousHash,
+            ownership: block.ownership,
+            ownershipAccount: OWNERSHIP,
+            mint: {
+              hash: blockHash,
+              hash_difficulty: difficulty,
+              x_minted: block.minted,
+              x_nonce: block.nonce,
+              timestamp: block.timestamp,
+              uuid: block.uuid,
+              value: value,
+              QRCode: process.env.SITEADDRESS + `hl/${address}/${block.index}/qr`,
+              link: process.env.SITEADDRESS + `b/${block.uuid}`,
+            },
+          },
+          
+          authorization: {
+            uac: {
+              userName: uac.userName,
+              userUUID: uac.userUUID,
+              accountType: uac.accountType
+            },
+            timeToMint: time_left,
+            canMint: AUTHORIZED
+          }
+        })
+    
+      })
+      
+    })
+    
+  }
+  else {
+    return res.status(404).send({
+      error: 'Unknown Error Occurred'
+    })
+  }
 })
 
 

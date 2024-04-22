@@ -22,9 +22,13 @@
 // SOFTWARE.
 //
 
-var qr = require('qr-image');
+const QRCode = require('qrcode');
+//var qr = require('qr-image');
 const SHA256 = require('crypto-js/sha256');
 const { v4: uuidv4 } = require('uuid');
+
+
+  
 
 /*
 /map/
@@ -168,7 +172,7 @@ class Block
         // (now - this.timestamp) => minted value increases over time
         var agingValue = ((new Date() - new Date(this.timestamp))/1050000000)
 
-        var mintValue = Math.round((((this.nonce/1000000) + (0.005 - (0.001*(this.minted-1)) *this.getDifficulty())) + agingValue) * 1000000) / 1000000
+        var mintValue = Math.round((((this.nonce/1000000 + (this.nonce *(this.getDifficulty() - 1))) + (0.005 - (0.001*(this.minted-1)) *this.getDifficulty())) + agingValue) * 1000000) / 1000000
         
         // value can never be less than zero
         if (mintValue < 0) { mintValue = 0 }
@@ -179,9 +183,17 @@ class Block
     
     async getQRCode() {
         // TODO: Include site path from .env
-        var code = qr.image(this.uuid, { type: 'png' });
-        return code;
-    }
+        let siteAddress = process.env.SITEADDRESS;
+
+        var code;
+        if (this.blockType != 0) {
+            code = await QRCode.toBuffer(siteAddress + 'b/' + this.uuid)
+        } else {
+            code = await QRCode.toBuffer(siteAddress + 'b/empty')
+        }
+
+        return code
+      }
 
 
     /**
@@ -262,4 +274,15 @@ class Block
     }
 }
 
+/*class Image {
+    constructor(src) {
+      this.src = src;
+    }
+
+    strip() {
+        var base64Data = this.src.replace(/^data:image\/png;base64,/, "");
+        return 'data:image/png;base64,' + base64Data
+    }
+  }
+*/
 module.exports = Block

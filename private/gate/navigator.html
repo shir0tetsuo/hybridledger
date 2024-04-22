@@ -47,7 +47,7 @@
                 <div class="topnavright"> 
                     <div>
                         <span class="material-symbols-outlined">
-                            <a class="phased" title="Mint" href="#">assured_workload</a>
+                            <a id="mintIcon" class="phased" title="Mint" href="#">assured_workload</a>
                         </span>
                     </div>
                 </div>
@@ -59,10 +59,11 @@
 
         </div>
             
-
+        <!-- 
         <div class="toppage">
             Under Construction
         </div>
+        -->
         
     </body>
 </html>
@@ -78,6 +79,7 @@
                 if(data) {
                     if (data.infinite == true) {
                         document.getElementById('minttime').innerHTML = 'Infinite'
+                        document.getElementById('mintIcon').innerHTML = 'account_balance'
                     }
                     if (data.timeleft != undefined) {
                         getTimeleft(data.timeleft)
