@@ -33,6 +33,31 @@ function getUptime()
     },1000);
 }
 
+function rotateTS(element, ts)
+{
+    var elementArea = document.getElementById(element)
+    let stamp = new Date(parseInt(ts))
+
+    // define diff
+    var diff = new Date().getTime() - stamp.getTime()
+    // convert the milliseconds to seconds
+    diff = diff / 1000
+
+    // get days, hours, minutes, seconds away from stamp
+    var days = Math.floor(diff / 86400);
+    var hours = Math.floor((diff % 86400) / 3600);
+    var minutes = Math.floor((diff % 3600) / 60);
+    var seconds = Math.floor(diff % 60);
+
+    // set the innerHTML of element to the formatted time
+    elementArea.innerHTML = `${days}d:${hours}h:${minutes}m:${seconds}s`;
+
+    setTimeout(() => {
+        rotateTS(element, ts)
+    }, 1000)
+    
+}
+
 function has_js()
 {
 

@@ -1,9 +1,82 @@
 <html>
     <body>
-        <blockquote>
-            <div class="loginbox">
-                <img src="${blockQR}">
-            </div>
-        </blockquote>
+        <div>
+            <br><br>
+            <!-- QR Space -->
+            <blockquote class="flexblockquote">
+                <div class="loginbox">
+                    
+                    <div style="margin: auto; text-align: center; width: 155px; position: relative; z-index: 21;">
+                        <img src="${blockQR}">
+                        <br>
+                        ${blockPosition},<gold>i${blockIndex}</gold>,<level>T${blockType}</level>
+                    </div>
+                </div>
+            </blockquote>
+
+            <!-- Time Space -->
+            <blockquote class="flexblockquote">
+                <div style="z-index: 22; position: relative; top: 3px; float: left;">
+                    <span class="material-symbols-outlined">
+                        &nbsp;update
+                    </span>
+                </div>
+                <div style="padding: 5px; left: 10px;"><span>&nbsp;Time Data</span></div>
+                <div class="loginbox">
+                    <gold>Latest</gold>
+                    <span id="latestTS">- --:--:--</span> ago<br>
+                    <level>--- --- ---- -- --- --- -</level>
+                    <br><br>
+                    <b>Created</b>
+                    <span id="blockTS">- --:--:--</span> ago<br>
+                    <level>${blockTSStr}</level>
+                    <br><br>
+                    <gold>Previous</gold>
+                    <span id="previousTS">- --:--:--</span> ago<br>
+                    <level>--- --- ---- -- --- --- -</level>
+                    <br><br>
+                    Genesis
+                    <span id="genesisTS">- --:--:--</span> ago<br>
+                    <level>--- --- ---- -- --- --- -</level>
+                </div>
+            </blockquote>
+
+            <!-- Ledger Space -->
+            <blockquote class="flexblockquote">
+                <div style="z-index: 22; position: relative; top: 3px; float: left;">
+                    <span class="material-symbols-outlined">
+                        &nbsp;post
+                    </span>
+                </div>
+                <div style="padding: 5px; left: 10px;"><span>&nbsp;Ledger</span></div>
+                <div class="loginbox">
+                    Information about Ledger.
+                </div>
+            </blockquote>
+
+
+            <!-- Block Space -->
+            <blockquote class="flexblockquote">
+                <div style="z-index: 22; position: relative; top: 3px; float: left;">
+                    <span class="material-symbols-outlined">
+                        &nbsp;confirmation_number
+                    </span>
+                </div>
+                <div style="padding: 5px; left: 10px;"><span>&nbsp;Mint</span></div>
+                <div class="loginbox">
+                    ${blockData}
+                </div>
+            </blockquote>
+        </div>
+
+        <!-- ts -> tick -->
+        <span id="blockTSinit" style="display: none;">${blockTS}</span>
+        
+        <script type="text/javascript">
+            let blockTS = document.getElementById('blockTSinit').innerHTML;
+            rotateTS('blockTS', blockTS)
+        </script>
+        <!-- end ts tick -->
+        <br>
     </body>
 </html>

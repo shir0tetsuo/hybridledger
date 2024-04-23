@@ -500,28 +500,42 @@ server.get('/b/:uuid', async (req, res) => {
   let dbBlock = await db.Ledgers.findOne({where: { uuid: uuid }})
 
   let page_header = await replace('./private/header.html', siteMeta)
+  let page_nav = await replace('./private/gate/navigator.html', siteMeta)
 
   let position;
   let index;
+  let timestamp;
   if (!dbBlock || dbBlock == undefined) {
+    console.log(`Placeholder called for ${uuid}`)
     position = '0,0'
     index = 0
+    timestamp = new Date().getTime()
+    blockdata = 'Empty'
+    blockType = 0
   } else {
+    console.log(`Set position/index for ${uuid}`)
     position = dbBlock.position
     index = dbBlock.index
+    timestamp = dbBlock.timestamp
+    blockdata = dbBlock.data
+    blockType = dbBlock.blockType
   }
 
   let blockQR = process.env.SITEADDRESS + 'hl/' + position + '/' + index + '/qr';
 
-  //let blockQR = await 
-
   siteMeta.pushVariable('blockQR', blockQR)
+  siteMeta.pushVariable('blockPosition', position)
+  siteMeta.pushVariable('blockIndex', index)
+  siteMeta.pushVariable('blockType', blockType)
+  siteMeta.pushVariable('blockData', blockdata)
+
+  siteMeta.pushVariable('blockTS', timestamp)
+  siteMeta.pushVariable('blockTSStr', new Date(timestamp).toLocaleString())
 
   let page_main = await replace('./private/gate/block.html', siteMeta)
 
-  let data = page_header + page_main
+  let data = page_header + page_nav + page_main
   
-  console.log('success.')
   res.status(200).send(data)
 
 })
