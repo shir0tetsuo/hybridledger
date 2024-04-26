@@ -23,6 +23,7 @@
 //
 
 const db = require('./db.js');
+const HybridLedgers = require('./ledger.js')
 const SHA256 = require('crypto-js/sha256')
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt') // https://www.npmjs.com/package/bcrypt
@@ -62,6 +63,68 @@ async function suspend(userUUID)
     await db.Users.update({accountType: 0}, {where: {userUUID: userUUID}})
 }
 
+/**
+ * 
+ * @returns {dict}
+ */
+function blankAccount()
+{
+    account = {
+        userUUID: uuidv4(),
+        accountType: 0,
+        userName: 'None',
+        publicName: 'None',
+        userEmail: 'ghost@shadowsword.ca',
+        emoji: '⛩️',
+        created: 'Unknown',
+        passwordToCompare: undefined,
+        displayEmail: false,
+        //sessionKey: uuidv4()
+    }
+    return account
+}
+
+/**
+ * 
+ * Is user authorized to mint?
+ * Calls `uac.netValue()`
+ * and `HybridLedgers.callHybridLedger()`
+ * for user's owned ledgers, transacted
+ * blocks;
+ * 
+ * @param {HybridLedger} HL Hybrid Ledger
+ * @param {UserAccount} uac User Account
+ * @returns {boolean}
+ */
+async function checkAuthorization(HL, uac)
+{
+    // Admin does what admin wants.
+    if ( uac.accountType >= 3 ) { console.log('! Auth Grant to Admin');
+        return true }
+
+    // Guests cannot mint.
+    if ( uac.accountType == 0 ) { return false }
+
+    // Time left before mint must not be greater than zero
+    let time_left = await uac.timeToMint();
+    if ( time_left > 0 ) { return false }
+
+    // Users cannot mint over locked blocks, but moderators can.
+    // Once a ledger lastBlock is locked, it can only be undone by a moderator+.
+    if ( uac.accountType < 2 && HL.lastBlock.blockType == 5 ) { return false }
+
+    // If the user+'s ownership is the last block's ownership,
+    // the user+ can mint. If the ownership is '0', user can mint.
+    if ( uac.userUUID == HL.lastBlock.ownership || HL.lastBlock.ownership == '0' ) { return true }
+    
+    // User net value must be greater than block's value.
+    uacNV = await uac.netValue();
+    if (uacNV < HL.getValue()) { return false }
+
+    // Authorized: User+ can mint!
+    return true
+}
+
 class UserAccount
 {
     constructor(plaintextPasswd, username='Guest', userUUID=uuidv4())
@@ -91,6 +154,59 @@ class UserAccount
         this.displayEmail = false
 
         this.sessionKey = uuidv4() // for {sessionKey:UserAccount}
+    }
+
+    /**
+     * 
+     * Get the uac's net value minus transaction blocks.
+     * Used for take-over calc.
+     * 
+     * @returns {number} user-net-value
+     */
+    async netValue()
+    {
+        // Access blocks from db
+        let UserBlocks = await db.Ledgers.findAll({where: {ownership: uac.userUUID} })
+        
+        // Return zero net value if user has no blocks
+        // (zero mint power over other ledgers).
+        if (!UserBlocks || UserBlocks == undefined || UserBlocks.length == 0) { return 0 }
+        
+
+        // 1 => Get unique positions by user's blocks.
+        var uniqueLedgerPositions = []
+        for (let block in UserBlocks) {
+            if (!uniqueLedgerPositions.includes(block.position)) {
+                uniqueLedgerPositions.push(block.position)
+            }
+        }
+
+        // 2 => If the ledgers' ownerships are account's,
+        //      get the ledger's value, push to total value.
+        var HLValue = 0;
+        for (let uniquePosition in uniqueLedgerPositions) {
+            // trim lastBlock.ownership != uac.userUUID
+            let inspectHL = await HybridLedgers.callHybridLedger(uniquePosition);
+            if (inspectHL.lastBlock.ownership == uac.userUUID) {
+                HLValue += inspectHL.getValue()
+            }
+        }
+
+        // 3 => transaction value reduction
+        //      from all user's blocks
+        //      (data = value to decrease)
+        var TXValue = 0;
+        for (let block in UserBlocks) {
+            if (block.blockType == 3) {
+                TXValue += parseFloat(block.data)
+            }
+        }
+
+        // HLValue is total value by ledger ownership.
+        // TXValue decreases total value.
+        let netValue = (HLValue - TXValue)
+
+        return netValue
     }
 
     debug()
@@ -445,6 +561,10 @@ module.exports = {
 
     // uac logged in true/false
     callUserPrivate,
+
+    blankAccount,
+
+    checkAuthorization,
 
     // uac itself
     UserAccount

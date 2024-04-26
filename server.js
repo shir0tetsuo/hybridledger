@@ -468,6 +468,97 @@ async function generateQRObject(address, index) {
   })
 }
 
+server.get('/hl/:address/:index', async (req, res) => {
+
+  const { address, index } = req.params;
+
+  if (address != undefined && index != undefined && false == isNaN(parseInt(index))) {
+    var siteMeta = new siteMetadata()
+    var uac = await siteMeta.UACHandler(req)
+  
+    let time_left = await uac.timeToMint()
+  
+    var HL = await HybridLedgers.callHybridLedger(address)
+  
+    var block;
+    let idx = parseInt(index)
+    if (HL.ledger.length >= idx) {
+      block = HL.ledger[idx]
+    } else {
+      // get last of ledger
+      block = HL.ledger[HL.ledger.length - 1]
+    }
+
+    let value = block.getValue()
+
+    let HLValue = HL.getValue();
+  
+    let HLPristine = HL.checkPristine();
+  
+    let blockOwner = block.ownership;
+  
+    let HLOwner = HL.lastBlock.ownership;
+
+    let blkOwnIsUAC;
+    if (blockOwner == uac.userUUID) { blkOwnIsUAC = true } else { blkOwnIsUAC = false };
+
+    let ledgerOwnerData = await Users.getUserByUUID(HLOwner)
+    let blockOwnerData = await Users.getUserByUUID(blockOwner)
+
+    if (!ledgerOwnerData || ledgerOwnerData == undefined) { ledgerOwnerData = Users.blankAccount() }
+    if (!blockOwnerData || blockOwnerData == undefined) { blockOwnerData = Users.blankAccount() }
+
+    let AUTHORIZED = await Users.checkAuthorization(HL,uac)
+
+    return res.status(200).send({
+      ledger: {
+        size: HL.ledger.length,
+        position: block.position,
+        value: HLValue,
+        pristine: HLPristine,
+        ledgerOwnership: HLOwner,
+        ledgerOwnershipAccount: ledgerOwnerData
+      },
+
+      block: {
+        mint: {
+          index: block.index,
+          uuid: block.uuid,
+          hash: block.getHash(),
+          blockType: block.blockType,
+          hash_difficulty: block.getDifficulty,
+          x_minted: block.minted,
+          x_nonce: block.nonce,
+          timestamp: block.timestamp,
+          data: block.data,
+        },
+
+        previousHash: block.previousHash,
+        value: value,
+        ownership: block.ownership,
+        ownershipAccount: blockOwnerData,
+        QRCode: process.env.SITEADDRESS + `hl/${address}/${block.index}/qr`,
+        link: process.env.SITEADDRESS + `b/${block.uuid}`
+      },
+
+      authorization: {
+        uac: {
+          userName: uac.userName,
+          userUUID: uac.userUUID,
+          accountType: uac.accountType
+        },
+        timeToMint: time_left,
+        canMint: AUTHORIZED,
+        matchBlockAccount: blkOwnIsUAC
+      }
+
+    })
+  } else {
+    return res.status(200).send({error: 'Cannot parse strings.'})
+  }
+
+})
+
 server.get('/hl/:address/:index/qr', async (req, res) => {
 
   // no db handling, read by class only
@@ -554,9 +645,9 @@ server.get('/lastblock/:address', async (req, res) => {
 
       let block = HL.lastBlock
     
-      let value = HL.lastBlock.getValue()
+      let value = block.getValue()
     
-      let difficulty = HL.lastBlock.getDifficulty()
+      let difficulty = block.getDifficulty()
 
       let blockHash = block.getHash();
 
