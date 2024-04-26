@@ -172,7 +172,7 @@ class Block
         // (now - this.timestamp) => minted value increases over time
         var agingValue = ((new Date() - new Date(this.timestamp))/1050000000)
 
-        var mintValue = Math.round((((this.nonce/1000000 + (this.nonce *(this.getDifficulty() - 1))) + (0.005 - (0.001*(this.minted-1)) *this.getDifficulty())) + agingValue) * 1000000) / 1000000
+        var mintValue = Math.round((((this.nonce/1000000 + (0.0002 *(this.getDifficulty() - 1))) + (0.005 - (0.001*(this.minted-1)) *this.getDifficulty())) + agingValue) * 1000000) / 1000000
         
         // value can never be less than zero
         if (mintValue < 0) { mintValue = 0 }

@@ -166,7 +166,7 @@ class UserAccount
     async netValue()
     {
         // Access blocks from db
-        let UserBlocks = await db.Ledgers.findAll({where: {ownership: uac.userUUID} })
+        let UserBlocks = await db.Ledgers.findAll({where: {ownership: this.userUUID} })
         
         // Return zero net value if user has no blocks
         // (zero mint power over other ledgers).
@@ -187,7 +187,7 @@ class UserAccount
         for (let uniquePosition in uniqueLedgerPositions) {
             // trim lastBlock.ownership != uac.userUUID
             let inspectHL = await HybridLedgers.callHybridLedger(uniquePosition);
-            if (inspectHL.lastBlock.ownership == uac.userUUID) {
+            if (inspectHL.lastBlock.ownership == this.userUUID) {
                 HLValue += inspectHL.getValue()
             }
         }
