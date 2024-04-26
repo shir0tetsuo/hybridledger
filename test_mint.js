@@ -8,7 +8,10 @@ let testUser = sysmath.newUUID()
 
 HybridLedgers.callHybridLedger('0,0e').then((HL) => {
     //HL.debug()
-    m = new Block(0, '0,0e', testUser, 0, 'Hello, World!')
+    m = new Block(0, '0,0e', testUser, 2, 'Hello, World!')
     m.mint(4)
-    m.debug()
+    HL.commit(m).then((HL) => {
+        console.log('! LAST BLOCK !')
+        HL.lastBlock.debug()
+    })
 })

@@ -78,7 +78,7 @@ function blankAccount()
         emoji: '⛩️',
         created: 'Unknown',
         passwordToCompare: undefined,
-        displayEmail: false,
+        displayEmail: true,
         //sessionKey: uuidv4()
     }
     return account

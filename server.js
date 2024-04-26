@@ -29,6 +29,13 @@
   database as well as active login (loggedIn) class
 */
 
+/*
+
+  #################################################################################
+    Modules & Configuration
+  #################################################################################
+
+*/
 
 // server application module
 const express = require('express')
@@ -68,13 +75,16 @@ server.use('/favicon.ico', express.static(path.resolve('./favicon.ico')))
 // private configuration
 require("dotenv").config();
 
+// the start time of the application
 let application_start = new Date();
 
+/*
 
+  #################################################################################
+    Application System File Read Functions
+  #################################################################################
 
-/// Begin Main Application ///
-
-
+*/
 
 /**
  * Read file from fs like from `'/private'`
@@ -105,6 +115,41 @@ async function replace(filePath, siteMeta) {
       data = data.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), siteMeta.variablesToReplace[key]);
     }
     return data;
+}
+
+/*
+
+  #################################################################################
+    Application Metadata Handling System
+  #################################################################################
+
+*/
+
+/**
+ * 
+ * Below is general QR Generation handling
+ * within /hl/addr/index/qr,
+ * Empty QR will always point to /b/empty,
+ * or will return a 404 if there is an index mismatch;
+ * This should never happen, but can happen
+ * if users manually enter in a bad
+ * index for an address.
+ * 
+ * @param {string} address 
+ * @param {number} index 
+ * @returns {QRCode.toBuffer}
+ */
+async function generateQRObject(address, index) {
+  return HybridLedgers.callHybridLedger(address).then((HL) => {
+    let block = HL.ledger[index]
+
+    if (!block || block == undefined) {
+      return
+    } else {
+      return block.getQRCode()
+    }
+    
+  })
 }
 
 /**
@@ -192,7 +237,7 @@ class siteMetadata
         const uac = await new Users.UserAccount(undefined, 'Guest')
         this.uac = uac
 
-        console.log('! Access Denied; return Guest account')
+        //console.log('! Access Denied; return Guest account')
 
         return this.pushUACToVariables()
 
@@ -206,7 +251,7 @@ class siteMetadata
 
           this.uac = loggedIn[userName]
 
-          console.log(`Returning Account Authorization: ${this.uac.userName}`)
+          //console.log(`Returning Account Authorization: ${this.uac.userName}`)
 
           return this.pushUACToVariables()
 
@@ -218,7 +263,7 @@ class siteMetadata
           loggedIn[userName] = uac
           this.uac = uac
 
-          console.log(`! Access Confirmed: Welcome Back, ${this.uac.userName}`)
+          //console.log(`! Access Confirmed: Welcome Back, ${this.uac.userName}`)
           this.uac.debug()
 
           return this.pushUACToVariables()
@@ -232,7 +277,7 @@ class siteMetadata
       const uac = await new Users.UserAccount(undefined, 'Guest')
       this.uac = uac
 
-      console.log('! Guest Account: No Cookies')
+      //console.log('! Guest Account: No Cookies')
 
       return this.pushUACToVariables()
     }
@@ -240,7 +285,13 @@ class siteMetadata
   }
 }
 
-// get /
+/*
+
+  #################################################################################
+    / (Home Page)
+  #################################################################################
+
+*/
 server.get('/', async(req, res) => { 
   // new siteMeta class
   var siteMeta = new siteMetadata()
@@ -256,15 +307,20 @@ server.get('/', async(req, res) => {
   let data = page_header + page_main
  
   // send res status 200 with data
-  res.status(200).send(data)
+  res.status(200).send(data); console.log(`200 ${req.url} => ${uac.userName}`)
 
-  console.log(`200 OK / => ${uac.userName}`)
   // cleanup memory
   siteMeta = undefined
   uac = undefined
 })
 
-// get /uac
+/*
+
+  #################################################################################
+    /uac (User Access Controller)
+  #################################################################################
+
+*/
 server.get('/uac', async(req, res) => { 
   var siteMeta = new siteMetadata()
   siteMeta.pushVariable('SITENAME', 'User Access Control')
@@ -283,20 +339,20 @@ server.get('/uac', async(req, res) => {
 
   let data = page_header + page_main + page_secondary
 
-  res.status(200).send(data)
-
-  console.log(`200 OK /uac => ${uac.userName}`)
+  res.status(200).send(data); console.log(`200 ${req.url} => ${uac.userName}`)
 
   // cleanup memory
   siteMeta = undefined
   uac = undefined
 })
 
-/**
- * 
- * Boundary between systems for testing and info absorption
- * 
- */
+/*
+
+  #################################################################################
+    /gate (Main Application)
+  #################################################################################
+
+*/
 server.get('/gate', async(req, res) => {
   var siteMeta = new siteMetadata()
   siteMeta.pushVariable('SITENAME', 'Gateway')
@@ -305,16 +361,24 @@ server.get('/gate', async(req, res) => {
 
   const page_header = await replace('./private/header.html', siteMeta)
   const page_nav = await replace('./private/gate/navigator.html', siteMeta)
+  const page_main = await replace('./private/gate/main.html', siteMeta)
 
 
-  let data = page_header + page_nav
-  res.status(200).send(data)
+  let data = page_header + page_nav + page_main
+  res.status(200).send(data); console.log(`200 ${req.url} => ${uac.userName}`)
 
   // cleanup memory
   siteMeta = undefined
   uac = undefined
 })
 
+/*
+
+  #################################################################################
+    /gate/minttime (Get uac time left to mint)
+  #################################################################################
+
+*/
 server.post('/gate/minttime', async(req, res) => {
 
   var siteMeta = new siteMetadata()
@@ -336,12 +400,13 @@ server.post('/gate/minttime', async(req, res) => {
   
 })
 
-/**
- * 
- * Logout sequence directs user to page and lets JS delete cookies.
- * get /logout
- * 
- */
+/*
+
+  #################################################################################
+    /logout (delete cookies)
+  #################################################################################
+
+*/
 server.get('/logout', async(req, res) => { 
   var siteMeta = new siteMetadata()
   siteMeta.pushVariable('SITENAME', 'User Access Control')
@@ -349,20 +414,19 @@ server.get('/logout', async(req, res) => {
   const page_main = await readFile('./private/uac/logout.html')
 
   let data = page_header + page_main
-  res.status(200).send(data)
+  res.status(200).send(data); console.log(`200 ${req.url} => ---`)
 
   // cleanup memory
   siteMeta = undefined
 })
 
-/**
- * 
- * login system
- * post /uac/login
- * 
- * Returns the user's hashed password as a key.
- * 
- */
+/*
+
+  #################################################################################
+    POST /uac/login ==200=> uac.privatePassword
+  #################################################################################
+
+*/
 server.post('/uac/login', async(req, res) => {
   let userName = req.body.user_name
   let plaintextPasswd = req.body.password
@@ -441,33 +505,17 @@ server.post('/uac/login', async(req, res) => {
 
 })
 
-/**
- * 
- * Below is general QR Generation handling
- * within /hl/addr/index/qr,
- * Empty QR will always point to /b/empty,
- * or will return a 404 if there is an index mismatch;
- * This should never happen, but can happen
- * if users manually enter in a bad
- * index for an address.
- * 
- * @param {string} address 
- * @param {number} index 
- * @returns {QRCode.toBuffer}
- */
-async function generateQRObject(address, index) {
-  return HybridLedgers.callHybridLedger(address).then((HL) => {
-    let block = HL.ledger[index]
 
-    if (!block || block == undefined) {
-      return
-    } else {
-      return block.getQRCode()
-    }
-    
-  })
-}
+/*
 
+  #################################################################################
+    /hl/:address/:index (return json of ledger index)
+  #################################################################################
+
+  NOTE: Might move data here to function for in-system calling than
+        burden the user with call requests.
+
+*/
 server.get('/hl/:address/:index', async (req, res) => {
 
   const { address, index } = req.params;
@@ -502,14 +550,15 @@ server.get('/hl/:address/:index', async (req, res) => {
     let blkOwnIsUAC;
     if (blockOwner == uac.userUUID) { blkOwnIsUAC = true } else { blkOwnIsUAC = false };
 
-    let ledgerOwnerData = await Users.getUserByUUID(HLOwner)
-    let blockOwnerData = await Users.getUserByUUID(blockOwner)
+    var ledgerOwnerData = await Users.getUserByUUID(HLOwner)
+    var blockOwnerData = await Users.getUserByUUID(blockOwner)
 
-    if (!ledgerOwnerData || ledgerOwnerData == undefined) { ledgerOwnerData = Users.blankAccount() }
-    if (!blockOwnerData || blockOwnerData == undefined) { blockOwnerData = Users.blankAccount() }
+    if (!ledgerOwnerData || ledgerOwnerData == undefined) { ledgerOwnerData = Users.blankAccount() } // TODO: temporary
+    if (!blockOwnerData || blockOwnerData == undefined) { blockOwnerData = Users.blankAccount() } // TODO: temporary
 
     let AUTHORIZED = await Users.checkAuthorization(HL,uac)
 
+    console.log(`200 ${req.url} => ${uac.userName}`)
     return res.status(200).send({
       ledger: {
         size: HL.ledger.length,
@@ -555,13 +604,19 @@ server.get('/hl/:address/:index', async (req, res) => {
     })
   } else {
     return res.status(200).send({error: 'Cannot parse strings.'})
+    console.error(`200 ${req.url} => ${uac.userName} ! Cannot parse strings`)
   }
 
 })
 
-server.get('/hl/:address/:index/qr', async (req, res) => {
+/*
 
-  // no db handling, read by class only
+  #################################################################################
+    /hl/:address/:index/qr (QR Code Call, Route Handler)
+  #################################################################################
+
+*/
+server.get('/hl/:address/:index/qr', async (req, res) => {
 
   const { address, index } = req.params;
 
@@ -574,9 +629,15 @@ server.get('/hl/:address/:index/qr', async (req, res) => {
     res.status(200).send(QRCode)
   }
 
-
 })
 
+/*
+
+  #################################################################################
+    /b/:uuid (Get block information by UUID)
+  #################################################################################
+
+*/
 server.get('/b/:uuid', async (req, res) => {
   const { uuid } = req.params;
 
@@ -597,14 +658,14 @@ server.get('/b/:uuid', async (req, res) => {
   let index;
   let timestamp;
   if (!dbBlock || dbBlock == undefined) {
-    console.log(`Placeholder called for ${uuid}`)
+    //console.log(`Placeholder called for ${uuid}`)
     position = '0,0'
     index = 0
     timestamp = new Date().getTime()
     blockdata = 'Empty'
     blockType = 0
   } else {
-    console.log(`Set position/index for ${uuid}`)
+    //console.log(`Set position/index for ${uuid}`)
     position = dbBlock.position
     index = dbBlock.index
     timestamp = dbBlock.timestamp
@@ -627,10 +688,19 @@ server.get('/b/:uuid', async (req, res) => {
 
   let data = page_header + page_nav + page_main
   
-  res.status(200).send(data)
+  res.status(200).send(data); console.log(`200 ${req.url} => ${uac.userName}`)
 
 })
 
+/*
+
+  #################################################################################
+    /lastblock/:address (TEST)
+  #################################################################################
+
+  NOTE: Fix user call in /hl/:address/:index, then deprecate
+        the code for the new function.
+*/
 server.get('/lastblock/:address', async (req, res) => {
 
   const { address } = req.params;
@@ -701,7 +771,7 @@ server.get('/lastblock/:address', async (req, res) => {
             AUTHORIZED = false
           }
         }
-    
+        console.log(`200 ${req.url} => ${uac.userName} ! Method to be depr.`)
         return res.status(200).send({
 
           ledger: {
@@ -756,11 +826,13 @@ server.get('/lastblock/:address', async (req, res) => {
   }
 })
 
+/*
 
+  #################################################################################
+    Start Server Listener (END)
+  #################################################################################
 
-
-
-// Start Server Listener
+*/
 server.listen(
     port,
     () => console.log(`Connection open @ localhost:${port}`)
