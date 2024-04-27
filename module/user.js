@@ -74,9 +74,9 @@ function blankAccount()
         accountType: 0,
         userName: 'None',
         publicName: 'None',
-        userEmail: 'ghost@shadowsword.ca',
+        userEmail: 'ghost@localhost',
         emoji: '⛩️',
-        created: 'Unknown',
+        created: new Date().getTime(),
         passwordToCompare: undefined,
         displayEmail: true,
         //sessionKey: uuidv4()
@@ -188,8 +188,16 @@ class UserAccount
             // trim lastBlock.ownership != uac.userUUID
             let inspectHL = await HybridLedgers.callHybridLedger(uniquePosition);
             if (inspectHL.lastBlock.ownership == this.userUUID) {
+                // Remove values of blocks that do not include the user's ownership
+                // in the owned ledger stack (therefore absorption not possible)
+                for (let inspectBlk in inspectHL.ledger) {
+                    if (inspectBlk.ownership != '0' && inspectBlk.ownership != this.userUUID) {
+                        HLValue -= inspectBlk.getValue()
+                    }
+                }
                 HLValue += inspectHL.getValue()
             }
+            
         }
 
         // 3 => transaction value reduction

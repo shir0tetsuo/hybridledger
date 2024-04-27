@@ -173,6 +173,7 @@ class siteMetadata
       'SITE': process.env.SITE,
       'SITENAME': process.env.SITENAME,
       'DESCRIPTION': 'shadowsword.ca Hybrid Ledger System. Create a minted immutable Hybrid Ledger using our new web application.',
+      // to be depr. for ${SITEADDRESS.}
       'DISCORDSITENAME': process.env.SITEADDRESS,
       'VERSION': process.env.VERSION,
       'SERVERSTART': `at ${application_start.toISOString()}`,
@@ -215,6 +216,124 @@ class siteMetadata
    * @param {string} instruction 
    */
   pushVariable(key, instruction) { this.variablesToReplace[key] = instruction; return }
+
+  /**
+   * ledger handler v3
+   * Returns ledger, block, mint, authorization for frontpage.
+   * 
+   * Assume variables are already defined.
+   * 
+   * @requires `this.uac`
+   * @param {string} address Address/Position of block.
+   * @param {number} index Index of block.
+   * @param {boolean} useLastBlock Switch flag to `true` to force last block.
+   * @returns `Inspection`
+  */
+  async LedgerHandler(address, index, useLastBlock = false)
+  {
+
+    let HL = await HybridLedgers.callHybridLedger(address);
+    let time_left = await this.uac.timeToMint();
+  
+    var block;
+    let idx = parseInt(index)
+    if (HL.ledger.length >= idx && useLastBlock == false) {
+      block = HL.ledger[idx]
+    } else {
+      // get last of ledger
+      block = HL.ledger[HL.ledger.length - 1]
+    }
+
+    
+    
+    var UDataLedgerOwnership = await Users.getUserByUUID(HL.lastBlock.ownership)
+    if (!UDataLedgerOwnership || UDataLedgerOwnership == undefined) 
+    { UDataLedgerOwnership = Users.blankAccount() } 
+    let publicLedgerUACEmail;
+    if (UDataLedgerOwnership.displayEmail == true) {
+      publicLedgerUACEmail = UDataLedgerOwnership.userEmail
+    } else {
+      publicLedgerUACEmail = 'ghost@'+process.env.SITE
+    }
+    let publicLedgerUAC = {
+      userName: UDataLedgerOwnership.userName,
+      userUUID: UDataLedgerOwnership.userUUID,
+      accountType: UDataLedgerOwnership.accountType,
+      publicName: UDataLedgerOwnership.publicName,
+      emoji: UDataLedgerOwnership.emoji,
+      created: UDataLedgerOwnership.created,
+      userEmail: publicLedgerUACEmail
+    }
+
+
+    var UDataBlockOwnership = await Users.getUserByUUID(block.ownership)
+    if (!UDataBlockOwnership || UDataBlockOwnership == undefined) 
+    { UDataBlockOwnership = Users.blankAccount() } 
+    let publicBlockUACEmail;
+    if (UDataBlockOwnership.displayEmail == true) {
+      publicBlockUACEmail = UDataBlockOwnership.userEmail
+    } else {
+      publicBlockUACEmail = 'ghost@'+process.env.SITE
+    }
+    let publicBlockUAC = {
+      userName: UDataBlockOwnership.userName,
+      userUUID: UDataBlockOwnership.userUUID,
+      accountType: UDataBlockOwnership.accountType,
+      publicName: UDataBlockOwnership.publicName,
+      emoji: UDataBlockOwnership.emoji,
+      created: UDataBlockOwnership.created,
+      userEmail: publicBlockUACEmail
+    }
+
+
+    let blkOwnIsUAC;
+    if (block.ownership == this.uac.userUUID) { blkOwnIsUAC = true } else { blkOwnIsUAC = false };
+
+
+    var Inspection = {
+      ledger: {
+        size: HL.ledger.length,
+        position: HL.position,
+        value: await HL.getValue(),
+        pristine: HL.checkPristine(),
+        ledgerOwnership: HL.lastBlock.ownership,
+        ledgerOwnershipAccount: publicLedgerUAC,
+      },
+
+      block: {
+        mint: {
+          index: block.index,
+          uuid: block.uuid,
+          hash: await block.getHash(),
+          blockType: block.blockType,
+          hashDifficulty: block.getDifficulty(),
+          xMinted: block.minted,
+          xNonce: block.nonce,
+          timestamp: block.timestamp,
+          data: block.data,
+        },
+        previousHash: block.previousHash,
+        value: await block.getValue(),
+        ownership: block.ownership,
+        ownershipAccount: publicBlockUAC,
+        QRCode: process.env.SITEADDRESS + `hl/${address}/${block.index}/qr`,
+        link: process.env.SITEADDRESS + `b/${block.uuid}`,
+      },
+
+      authorization: {
+        uac: {
+          userName: this.uac.userName,
+          userUUID: this.uac.userUUID,
+          accountType: this.uac.accountType,
+        },
+        timeToMint: await this.uac.timeToMint(),
+        canMint: await Users.checkAuthorization(HL, this.uac),
+        ownershipMatchesAccountUUID: blkOwnIsUAC,
+        netValue: await this.uac.netValue(),
+      }
+    }
+    return Inspection
+  }
 
   /**
    * Pushes UAC data to keys in variablesToReplace
@@ -307,7 +426,7 @@ server.get('/', async(req, res) => {
   let data = page_header + page_main
  
   // send res status 200 with data
-  res.status(200).send(data); console.log(`200 ${req.url} => ${uac.userName}`)
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
   // cleanup memory
   siteMeta = undefined
@@ -339,7 +458,7 @@ server.get('/uac', async(req, res) => {
 
   let data = page_header + page_main + page_secondary
 
-  res.status(200).send(data); console.log(`200 ${req.url} => ${uac.userName}`)
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
   // cleanup memory
   siteMeta = undefined
@@ -365,7 +484,7 @@ server.get('/gate', async(req, res) => {
 
 
   let data = page_header + page_nav + page_main
-  res.status(200).send(data); console.log(`200 ${req.url} => ${uac.userName}`)
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
   // cleanup memory
   siteMeta = undefined
@@ -414,7 +533,7 @@ server.get('/logout', async(req, res) => {
   const page_main = await readFile('./private/uac/logout.html')
 
   let data = page_header + page_main
-  res.status(200).send(data); console.log(`200 ${req.url} => ---`)
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ---`)
 
   // cleanup memory
   siteMeta = undefined
@@ -520,92 +639,15 @@ server.get('/hl/:address/:index', async (req, res) => {
 
   const { address, index } = req.params;
 
-  if (address != undefined && index != undefined && false == isNaN(parseInt(index))) {
-    var siteMeta = new siteMetadata()
-    var uac = await siteMeta.UACHandler(req)
-  
-    let time_left = await uac.timeToMint()
-  
-    var HL = await HybridLedgers.callHybridLedger(address)
-  
-    var block;
-    let idx = parseInt(index)
-    if (HL.ledger.length >= idx) {
-      block = HL.ledger[idx]
-    } else {
-      // get last of ledger
-      block = HL.ledger[HL.ledger.length - 1]
-    }
+  if (!address || address == undefined) return res.status(200).send({error: 'Cannot identify address.'})
+  if (!index || index == undefined || isNaN(parseInt(index))) return res.status(200).send({error: 'Cannot identify index.'})
 
-    let value = block.getValue()
+  var siteMeta = new siteMetadata()
+  var uac = await siteMeta.UACHandler(req)
 
-    let HLValue = HL.getValue();
-  
-    let HLPristine = HL.checkPristine();
-  
-    let blockOwner = block.ownership;
-  
-    let HLOwner = HL.lastBlock.ownership;
+  let data = await siteMeta.LedgerHandler(address, index);
 
-    let blkOwnIsUAC;
-    if (blockOwner == uac.userUUID) { blkOwnIsUAC = true } else { blkOwnIsUAC = false };
-
-    var ledgerOwnerData = await Users.getUserByUUID(HLOwner)
-    var blockOwnerData = await Users.getUserByUUID(blockOwner)
-
-    if (!ledgerOwnerData || ledgerOwnerData == undefined) { ledgerOwnerData = Users.blankAccount() } // TODO: temporary
-    if (!blockOwnerData || blockOwnerData == undefined) { blockOwnerData = Users.blankAccount() } // TODO: temporary
-
-    let AUTHORIZED = await Users.checkAuthorization(HL,uac)
-
-    console.log(`200 ${req.url} => ${uac.userName}`)
-    return res.status(200).send({
-      ledger: {
-        size: HL.ledger.length,
-        position: block.position,
-        value: HLValue,
-        pristine: HLPristine,
-        ledgerOwnership: HLOwner,
-        ledgerOwnershipAccount: ledgerOwnerData
-      },
-
-      block: {
-        mint: {
-          index: block.index,
-          uuid: block.uuid,
-          hash: block.getHash(),
-          blockType: block.blockType,
-          hash_difficulty: block.getDifficulty,
-          x_minted: block.minted,
-          x_nonce: block.nonce,
-          timestamp: block.timestamp,
-          data: block.data,
-        },
-
-        previousHash: block.previousHash,
-        value: value,
-        ownership: block.ownership,
-        ownershipAccount: blockOwnerData,
-        QRCode: process.env.SITEADDRESS + `hl/${address}/${block.index}/qr`,
-        link: process.env.SITEADDRESS + `b/${block.uuid}`
-      },
-
-      authorization: {
-        uac: {
-          userName: uac.userName,
-          userUUID: uac.userUUID,
-          accountType: uac.accountType
-        },
-        timeToMint: time_left,
-        canMint: AUTHORIZED,
-        matchBlockAccount: blkOwnIsUAC
-      }
-
-    })
-  } else {
-    return res.status(200).send({error: 'Cannot parse strings.'})
-    console.error(`200 ${req.url} => ${uac.userName} ! Cannot parse strings`)
-  }
+  return res.status(200).send({data}); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
 })
 
@@ -678,6 +720,7 @@ server.get('/b/:uuid', async (req, res) => {
   siteMeta.pushVariable('blockQR', blockQR)
   siteMeta.pushVariable('blockPosition', position)
   siteMeta.pushVariable('blockIndex', index)
+  siteMeta.pushVariable('blockTypeStr', ['Empty','Genesis','Minted','Transaction','Acquirement','Locked','Obfuscated'][blockType])
   siteMeta.pushVariable('blockType', blockType)
   siteMeta.pushVariable('blockData', blockdata)
 
@@ -688,142 +731,29 @@ server.get('/b/:uuid', async (req, res) => {
 
   let data = page_header + page_nav + page_main
   
-  res.status(200).send(data); console.log(`200 ${req.url} => ${uac.userName}`)
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
 })
 
 /*
 
   #################################################################################
-    /lastblock/:address (TEST)
+    /lastblock/:address (v3)
   #################################################################################
-
-  NOTE: Fix user call in /hl/:address/:index, then deprecate
-        the code for the new function.
 */
 server.get('/lastblock/:address', async (req, res) => {
 
   const { address } = req.params;
 
+  if (!address || address == undefined) return res.status(200).send({error: 'Cannot identify address.'})
+
   var siteMeta = new siteMetadata()
   var uac = await siteMeta.UACHandler(req)
 
-  let time_left = await uac.timeToMint()
+  let data = await siteMeta.LedgerHandler(address, 0, true);
 
-  if (address != undefined) {
-    HybridLedgers.callHybridLedger(address).then((HL) => {
+  return res.status(200).send({data}); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
-      let block = HL.lastBlock
-    
-      let value = block.getValue()
-    
-      let difficulty = block.getDifficulty()
-
-      let blockHash = block.getHash();
-
-      let HLValue = HL.getValue();
-
-      let HLPristine = HL.checkPristine();
-
-      var OWNERSHIP;
-
-      Users.getUserByUUID(block.ownership).then(ownerData => {
-        if (!ownerData || ownerData == undefined) {
-          OWNERSHIP = {
-            accountType:0,
-            userName:'None',
-            publicName:'None',
-            emoji:'',
-            created: 'Unknown'
-          }
-        } else {
-          OWNERSHIP = {
-            accountType:ownerData.accountType,
-            userName:ownerData.userName,
-            publicName:ownerData.publicName,
-            emoji:ownerData.emoji,
-            created:ownerData.createdAt
-          }
-        }
-        //block.debug()
-
-        var AUTHORIZED;
-
-        // case ownership 0/Empty: grant authorization to non-guest account
-        if (block.ownership == '0') {
-          if (uac.accountType > 0) {
-            AUTHORIZED = true
-          } else {
-            AUTHORIZED = false
-          }
-        
-        // case ownership belongs to someone else: check mint time left,
-        // ensure user account is authorized to mint,
-        // and ensure that the block is not locked.
-        } else {
-          if (block.ownership == uac.userUUID && time_left <= 0) {
-            if (uac.accountType > 0 && block.blockType != 5) {
-              AUTHORIZED = true
-            } else {
-              AUTHORIZED = false
-            }
-          } else {
-            AUTHORIZED = false
-          }
-        }
-        console.log(`200 ${req.url} => ${uac.userName} ! Method to be depr.`)
-        return res.status(200).send({
-
-          ledger: {
-            size: HL.ledger.length,
-            position: block.position,
-            ledgerOwnership: block.ownership,
-            ownershipAccount: OWNERSHIP,
-            value: HLValue,
-            pristine: HLPristine,
-          },
-
-          block: {
-            index: block.index,
-            blockType: block.blockType,
-            data: block.data,
-            previousHash: block.previousHash,
-            ownership: block.ownership,
-            ownershipAccount: OWNERSHIP,
-            mint: {
-              hash: blockHash,
-              hash_difficulty: difficulty,
-              x_minted: block.minted,
-              x_nonce: block.nonce,
-              timestamp: block.timestamp,
-              uuid: block.uuid,
-              value: value,
-              QRCode: process.env.SITEADDRESS + `hl/${address}/${block.index}/qr`,
-              link: process.env.SITEADDRESS + `b/${block.uuid}`,
-            },
-          },
-          
-          authorization: {
-            uac: {
-              userName: uac.userName,
-              userUUID: uac.userUUID,
-              accountType: uac.accountType
-            },
-            timeToMint: time_left,
-            canMint: AUTHORIZED
-          }
-        })
-    
-      })
-      
-    })
-    
-  }
-  else {
-    return res.status(404).send({
-      error: 'Unknown Error Occurred'
-    })
-  }
 })
 
 /*

@@ -8,8 +8,9 @@
                     
                     <div style="margin: auto; text-align: center; width: 155px; position: relative; z-index: 1;">
                         <img src="${blockQR}">
-                        <br>
-                        ${blockPosition},<gold>i${blockIndex}</gold>,<level>T${blockType}</level>
+                        <!-- TODO: Implement emoji per block ...-->
+                        <a href="${DISCORDSITENAME}hl/${blockPosition}/${blockIndex}">${blockPosition}</a>
+                        <br><gold>index[${blockIndex}]</gold><br><level>${blockTypeStr}</level>
                     </div>
                 </div>
             </blockquote>
@@ -22,7 +23,7 @@
                     </span>
                 </div>
                 <div style="padding: 5px; left: 10px;"><span>&nbsp;Time Data</span></div>
-                <div class="loginbox">
+                <div style="font-size: smaller; padding-left: 5px; padding-bottom: 5px;">
                     <gold>Latest</gold>
                     <span id="latestTS">- --:--:--</span> ago<br>
                     <level>--- --- ---- -- --- --- -</level>
