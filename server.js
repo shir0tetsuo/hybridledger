@@ -218,6 +218,43 @@ class siteMetadata
   pushVariable(key, instruction) { this.variablesToReplace[key] = instruction; return }
 
   /**
+   * For calculating part of position for ledger calls.
+   * 
+   * @param {string} hexString 
+   * @returns {string} hexString++
+   */
+  incrementHexString(hexString) { var bigInt = BigInt(`0x${hexString}`)++; return bigInt.toString(16) }
+
+  /**
+   * Pushes matrix site meta variables. 
+   * 
+   * This will not be the same handler for time functions.
+   * 
+   * @param {number} xX Number to multiply matrix cell inspector, horizontal value. Always number, not hex.
+   * @param {number} xY Number to multiply matrix cell inspector, veritcal value. Always number, not hex.
+   */
+  async BlockMatrix(xX, xY)
+  {
+    let Mx = 8; // matrix length for x, y
+    
+    var positionPoolX = []; for (var i = xX*Mx; i < (xX*Mx)+Mx; i++) { positionPoolX.push(i.toString(16)) };
+    var positionPoolY = []; for (var i = xY*Mx; i < (xY*Mx)+Mx; i++) { positionPoolY.push(i.toString(16)) };
+    
+    var cellY = 0
+    for (let Y in positionPoolY.reverse()) {
+      var cellX = 0
+      for (let X in positionPoolX) {
+        let Inspection = await this.LedgerHandler(`${positionPoolX[X]},${positionPoolY[Y]}`, 0, true)
+        //console.log(`LEDGER ${positionPoolX[X]} ${positionPoolY[Y]}`)
+        // [cells] => fn->[formattedCells${xy}] => page
+        this.pushVariable(`cell${cellY}_${cellX}`,`formattedCell${Inspection.ledger.position}`)
+        cellX++
+      }
+      cellY++
+    }
+  }
+
+  /**
    * ledger handler v3
    * Returns ledger, block, mint, authorization for frontpage.
    * 
@@ -237,15 +274,20 @@ class siteMetadata
   
     var block;
     let idx = parseInt(index)
-    if (HL.ledger.length >= idx && useLastBlock == false) {
+    if (idx+1 <= HL.ledger.length && useLastBlock == false) {
       block = HL.ledger[idx]
     } else {
       // get last of ledger
       block = HL.ledger[HL.ledger.length - 1]
     }
 
-    
-    
+    let isLastBlock;
+    if (block.index+1 == HL.ledger.length) {
+      isLastBlock = true;
+    } else {
+      isLastBlock = false;
+    }
+
     var UDataLedgerOwnership = await Users.getUserByUUID(HL.lastBlock.ownership)
     if (!UDataLedgerOwnership || UDataLedgerOwnership == undefined) 
     { UDataLedgerOwnership = Users.blankAccount() } 
@@ -306,12 +348,14 @@ class siteMetadata
           uuid: block.uuid,
           hash: await block.getHash(),
           blockType: block.blockType,
+          blockTypeStr: ['Empty','Genesis','Minted','Transaction','Acquirement','Locked','Obfuscated'][block.blockType],
           hashDifficulty: block.getDifficulty(),
           xMinted: block.minted,
           xNonce: block.nonce,
           timestamp: block.timestamp,
           data: block.data,
         },
+        isLastBlock: isLastBlock,
         previousHash: block.previousHash,
         value: await block.getValue(),
         ownership: block.ownership,
@@ -480,8 +524,35 @@ server.get('/gate', async(req, res) => {
 
   const page_header = await replace('./private/header.html', siteMeta)
   const page_nav = await replace('./private/gate/navigator.html', siteMeta)
-  const page_main = await replace('./private/gate/main.html', siteMeta)
+  const page_main = await replace('./private/gate/homepage.html', siteMeta)
 
+
+  let data = page_header + page_nav + page_main
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
+})
+
+server.get('/gate/last/:xpos/:ypos', async(req, res) => {
+
+  const { xpos, ypos } = req.params;
+
+  if (!xpos||xpos==undefined||isNaN(xpos)){return res.status(404).send({error: 'xpos NaN'})}
+  if (!ypos||ypos==undefined||isNaN(ypos)){return res.status(404).send({error: 'ypos NaN'})}
+
+  var siteMeta = new siteMetadata()
+  siteMeta.pushVariable('SITENAME', `Gateway Area ${xpos}:${ypos}`)
+
+  var uac = await siteMeta.UACHandler(req)
+
+  await siteMeta.BlockMatrix(xpos, ypos)
+
+  const page_header = await replace('./private/header.html', siteMeta)
+  const page_nav = await replace('./private/gate/navigator.html', siteMeta)
+  // const page_nav_fn = await siteMeta.fnHandler()...
+  const page_main = await replace('./private/gate/main.html', siteMeta)
 
   let data = page_header + page_nav + page_main
   res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
@@ -738,10 +809,10 @@ server.get('/b/:uuid', async (req, res) => {
 /*
 
   #################################################################################
-    /lastblock/:address (v3)
+    /hl/:address (v3) (last block)
   #################################################################################
 */
-server.get('/lastblock/:address', async (req, res) => {
+server.get('/hl/:address', async (req, res) => {
 
   const { address } = req.params;
 

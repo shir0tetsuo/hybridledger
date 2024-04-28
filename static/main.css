@@ -5,6 +5,26 @@ body {
     font-size: 18px;
   }
 
+  .container {
+    height: 100%;
+  }
+
+  .container table {
+    min-height: 300px;
+    width: 100%;
+    flex: auto;
+    min-width: 500px;
+    font-size: x-small;
+  }
+
+  .container table td, table th {
+    min-height: 25px;
+    flex: auto;
+    padding: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.175);
+    font-size: x-small;
+  }
+
   .topnavigator {
     height: 30px;
     width: 100%;

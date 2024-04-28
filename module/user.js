@@ -99,8 +99,7 @@ function blankAccount()
 async function checkAuthorization(HL, uac)
 {
     // Admin does what admin wants.
-    if ( uac.accountType >= 3 ) { console.log('! Auth Grant to Admin');
-        return true }
+    if ( uac.accountType >= 3 ) { return true }
 
     // Guests cannot mint.
     if ( uac.accountType == 0 ) { return false }

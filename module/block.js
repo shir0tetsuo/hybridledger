@@ -216,7 +216,7 @@ class Block
      */
     mint(difficulty) {
 
-        console.log('Minting b-' + this.uuid)
+        //console.log('Minting b-' + this.uuid)
         
         // difficulty -> leading zeroes, nonce++ until (^"0"*difficulty...)
         this.minted++;
@@ -225,9 +225,6 @@ class Block
             this.nonce++;
             this.hash = this.getHash();
         }
-
-        // for debugging
-        console.log(this.nonce, this.hash, 'b-'+ this.uuid, 'minted', this.minted)
 
         return
 
