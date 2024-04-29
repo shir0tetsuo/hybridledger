@@ -8,7 +8,7 @@
                     
                     <div style="margin: auto; text-align: center; width: 155px; position: relative; z-index: 1;">
                         <img src="${blk_qr}">
-                        <!-- TODO: Implement emoji per block ...-->
+                        
                         <a title="View JSON" style="font-size:larger;" href="${DISCORDSITENAME}hl/${ledger_position}/${blk_idx}">${ledger_position}</a>
                         <br><gold>index[${blk_idx}/${ledger_maxidx}]</gold><br><level>${blk_typeStr}</level>
                     </div>
@@ -169,20 +169,21 @@
             }
 
             function initialize(){
+                // enable back to grid icon
                 toggle('backToGrid')
-                console.log('Init TS ...')
                 // <= xTSinit(ts)
                 let latestTS = document.getElementById('latestTSinit').innerHTML;
                 let nextTS = document.getElementById('nextTSinit').innerHTML;
                 let blockTS = document.getElementById('blockTSinit').innerHTML;
                 let prevTS = document.getElementById('prevTSinit').innerHTML;
                 let genesisTS = document.getElementById('genesisTSinit').innerHTML;
-                // => 
+                // => time++
                 rotateTS('latestTS', latestTS)
                 rotateTS('nextTS', nextTS)
                 rotateTS('blockTS', blockTS)
                 rotateTS('prevTS', prevTS)
                 rotateTS('genesisTS', genesisTS)
+                // => timestamp -> date/time string
                 document.getElementById('latestTSStr').innerHTML = getTimeString(latestTS)
                 document.getElementById('nextTSStr').innerHTML = getTimeString(nextTS)
                 document.getElementById('blockTSStr').innerHTML = getTimeString(blockTS)

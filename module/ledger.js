@@ -140,14 +140,14 @@ class HybridLedger
     checkPristine()
     {
         // check if ledger is available
-        if (!this.ledger) { return false }
+        if (!this.ledger || this.ledger == undefined) { return false }
 
         // one entry is always pristine as there is nothing to check back on
         if (this.ledger.length < 2) { return true }
 
         var pristine = true
 
-        for (i = this.ledger.length - 2; i >= 0; i--) {
+        for (let i = (this.ledger.length - 2); i >= 0; i--) {
             if (this.ledger[i].getHash() != this.ledger[i + 1].previousHash) {
                 pristine = false
                 break

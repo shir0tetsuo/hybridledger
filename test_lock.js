@@ -8,8 +8,8 @@ let testUser = 'c31a83ff-6aa5-4e6c-a2c2-023af54d850f'//sysmath.newUUID()
 
 HybridLedgers.callHybridLedger('0,0').then((HL) => {
     //HL.debug()
-    m = new Block(0, '0,0', testUser, 1, 'This is the first official block, ever! See all updates on Github.')
-    m.mint(2)
+    m = new Block(HL.lastBlock.index+1, '0,0', testUser, 5, '<gold>This block locks the ledger.</gold>',HL.lastBlock.hash)
+    m.mint(3)
     HL.commit(m).then((HL) => {
         console.log('! LAST BLOCK !')
         HL.lastBlock.debug()

@@ -78,7 +78,7 @@ require("dotenv").config();
 // the start time of the application
 let application_start = new Date();
 
-let accountTypes = ['Guest', 'User', 'Moderator', 'Administrator']
+let accountTypes = ['Ghost', 'User', 'Moderator', 'Administrator']
 let blockTypes = ['Empty','Genesis','Minted','Transaction','Acquirement','Locked','Obfuscated']
 /*
 
@@ -305,7 +305,7 @@ class siteMetadata
         //console.log(`LEDGER ${positionPoolX[X]} ${positionPoolY[Y]}`)
         // TODO: Make Formatted Cell function with Inspection!
         // [cells] => fn->[formattedCells${xy}] => page
-        this.pushVariable(`cell${cellY}_${cellX}`,`formattedCell${Inspection.ledger.position}`)
+        this.pushVariable(`cell${cellY}_${cellX}`,`<a href="${Inspection.block.link}">formattedCell${Inspection.ledger.position}</a>`)
         cellX++
       }
       cellY++
@@ -374,14 +374,14 @@ class siteMetadata
       block = HL.ledger[idx]
       if (idx >= 1) {
         prevTS = HL.ledger[idx-1].timestamp
-        prevLink = process.env.SITEADDRESS + 'b/' + HL.ledger[idx-1]
+        prevLink = process.env.SITEADDRESS + 'b/' + HL.ledger[idx-1].uuid
       } else {
         prevTS = 0
         prevLink = '#'
       }
       if (idx+1 < HL.ledger.length) {
         nextTS = HL.ledger[idx+1].timestamp
-        nextLink = process.env.SITEADDRESS + 'b/' + HL.ledger[idx+1]
+        nextLink = process.env.SITEADDRESS + 'b/' + HL.ledger[idx+1].uuid
       } else {
         nextTS = 0
         nextLink = '#'
