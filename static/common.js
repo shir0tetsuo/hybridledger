@@ -6,7 +6,7 @@ function getTimeleft(timeleft)
     var seconds = Math.floor(timeleft % 60);
     document.getElementById('minttime').innerHTML = `${days}:${hours}:${minutes}:${seconds}`
     setTimeout(() => {
-        console.warn('timeleft_tick')
+        console.warn('server mint: timeleft_tick')
         getTimeleft(timeleft)
     }, 1000)
 }

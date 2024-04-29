@@ -23,10 +23,17 @@
 //
 
 /*
-  TODO: Work on Page Navigator.
-  TODO: Make /contact, /gate, and /user/uuid.
-  Remember that changes to user attributes must be reflected in
-  database as well as active login (loggedIn) class
+  TODO: Work on Page Navigator. (part 1 / 3 done, user funcs and map cell funcs next)
+  TODO: Make /contact, and /user/uuid.
+  NOTE: Reduce the number of database calls with a findAll function? but this
+        current method is probably the fastest. Assuming the database is loaded
+        into RAM instead of constantly making unnecessary calls to the file
+        after it's been loaded. Will have to follow up on the npm dev or inspect
+        SQLite3/sequelize.
+  TODO: Standardize DIV's in pages and add dynamic color.
+  
+  NOTE: Remember that changes to user attributes must be reflected in
+        database as well as active login (loggedIn) class
 */
 
 /*
@@ -177,6 +184,8 @@ class siteMetadata
       'DESCRIPTION': 'shadowsword.ca Hybrid Ledger System. Create a minted immutable Hybrid Ledger using our new web application.',
       // to be depr. for ${SITEADDRESS.}
       'DISCORDSITENAME': process.env.SITEADDRESS,
+      'DISCORDSITEBAR': 'Hybrid Ledgers',
+      'SITEADDRESS': process.env.SITEADDRESS,
       'VERSION': process.env.VERSION,
       'SERVERSTART': `at ${application_start.toISOString()}`,
       'EXACTSERVERSTART': application_start.getTime()
@@ -302,10 +311,28 @@ class siteMetadata
       var cellX = 0
       for (let X in positionPoolX) {
         let Inspection = await this.LedgerHandler(`${positionPoolX[X]},${positionPoolY[Y]}`, 0, true)
-        //console.log(`LEDGER ${positionPoolX[X]} ${positionPoolY[Y]}`)
-        // TODO: Make Formatted Cell function with Inspection!
-        // [cells] => fn->[formattedCells${xy}] => page
-        this.pushVariable(`cell${cellY}_${cellX}`,`<a href="${Inspection.block.link}">formattedCell${Inspection.ledger.position}</a>`)
+
+        this.pushVariable(`blockUUID`, Inspection.block.mint.uuid)
+        this.pushVariable(`blockTimestamp`, Inspection.block.mint.timestamp)
+        this.pushVariable(`ledgerPosition`, Inspection.ledger.position)
+        this.pushVariable(`blockData`, Inspection.block.mint.data)
+        this.pushVariable(`ledgerEmoji`, Inspection.ledger.ledgerOwnershipAccount.emoji)
+        this.pushVariable(`blockIndex`, Inspection.block.mint.index)
+        this.pushVariable(`blockTimestamp`, Inspection.block.mint.timestamp)
+        this.pushVariable(`blockType`, Inspection.block.mint.blockType)
+        this.pushVariable(`blockURL`, Inspection.block.link)
+        this.pushVariable(`ledgerOwnerAcctType`, Inspection.ledger.ledgerOwnershipAccount.accountTypeStr)
+        this.pushVariable(`ledgerOwnerLink`, '/user/'+ Inspection.ledger.ledgerOwnershipAccount.userUUID)
+        this.pushVariable(`ledgerOwnerPubname`, Inspection.ledger.ledgerOwnershipAccount.publicName)
+        this.pushVariable(`ledgerOwn`, Inspection.ledger.ledgerOwnershipAccount.userUUID)
+        this.pushVariable(`ledgerOwnerUsername`, Inspection.ledger.ledgerOwnershipAccount.userName)
+        this.pushVariable(`ledgerOwnEmail`, Inspection.ledger.ledgerOwnershipAccount.userEmail)
+        this.pushVariable(`blockMintable`, Inspection.authorization.canMint)
+
+        let Element = await replace('./private/gate/blockElement.html',this)
+
+        this.pushVariable(`cell${cellY}_${cellX}`, Element)
+
         cellX++
       }
       cellY++
@@ -675,6 +702,7 @@ server.get('/gate/last/:xpos/:ypos', async(req, res) => {
 
   var siteMeta = new siteMetadata()
   siteMeta.pushVariable('SITENAME', `Gateway Area ${xpos}:${ypos}`)
+  siteMeta.pushVariable('DISCORDSITEBAR', `Hybrid Ledger Gateway Area X${xpos}:Y${ypos}`)
 
   var uac = await siteMeta.UACHandler(req)
 
@@ -744,6 +772,21 @@ server.get('/logout', async(req, res) => {
 
   // cleanup memory
   siteMeta = undefined
+})
+
+/*
+
+  #################################################################################
+    /user/:useruuid (User Profile/Page)
+  #################################################################################
+
+*/
+
+server.get('/user/:uuid', async(req, res) => {
+
+  const { uuid } = req.params;
+
+  res.status(200).send({data: "Page is a work in progress."})
 })
 
 /*
@@ -934,6 +977,8 @@ server.get('/b/:uuid', async (req, res) => {
     Inspection = await siteMeta.LedgerHandler(dbBlock.position,dbBlock.index,false)
   }
 
+  siteMeta.pushVariable('TITLE',process.env.SITE + ' B-' + Inspection.block.mint.uuid)
+  siteMeta.pushVariable('DISCORDSITEBAR', `Ledger ${Inspection.ledger.position} #${Inspection.block.mint.index} (${Inspection.block.mint.uuid})`)
   siteMeta.pushBlockVariables(Inspection)
 
   let page_header = await replace('./private/header.html', siteMeta)
@@ -943,50 +988,6 @@ server.get('/b/:uuid', async (req, res) => {
   let data = page_header + page_nav + page_main
 
   res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
-
-  /*let time_left = await uac.timeToMint()
-
-  let dbBlock = await db.Ledgers.findOne({where: { uuid: uuid }})
-
-  let page_header = await replace('./private/header.html', siteMeta)
-  let page_nav = await replace('./private/gate/navigator.html', siteMeta)
-
-  let position;
-  let index;
-  let timestamp;
-  if (!dbBlock || dbBlock == undefined) {
-    //console.log(`Placeholder called for ${uuid}`)
-    position = '0,0'
-    index = 0
-    timestamp = new Date().getTime()
-    blockdata = 'Empty'
-    blockType = 0
-  } else {
-    //console.log(`Set position/index for ${uuid}`)
-    position = dbBlock.position
-    index = dbBlock.index
-    timestamp = dbBlock.timestamp
-    blockdata = dbBlock.data
-    blockType = dbBlock.blockType
-  }
-
-  let blockQR = process.env.SITEADDRESS + 'hl/' + position + '/' + index + '/qr';
-
-  siteMeta.pushVariable('blockQR', blockQR)
-  siteMeta.pushVariable('blockPosition', position)
-  siteMeta.pushVariable('blockIndex', index)
-  siteMeta.pushVariable('blockTypeStr', ['Empty','Genesis','Minted','Transaction','Acquirement','Locked','Obfuscated'][blockType])
-  siteMeta.pushVariable('blockType', blockType)
-  siteMeta.pushVariable('blockData', blockdata)
-
-  siteMeta.pushVariable('blockTS', timestamp)
-  siteMeta.pushVariable('blockTSStr', new Date(timestamp).toLocaleString())
-
-  let page_main = await replace('./private/gate/block.html', siteMeta)
-
-  let data = page_header + page_nav + page_main*/
-  
-  
 
 })
 

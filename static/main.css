@@ -19,6 +19,7 @@ body {
 
   .container table td, table th {
     min-height: 25px;
+    max-width: 65px;
     flex: auto;
     padding: 5px;
     border: 1px solid rgba(0, 0, 0, 0.175);
@@ -343,7 +344,6 @@ body {
   .extrusionbase {
     position: relative;
     display: inline-block;
-    border-bottom: 2px dotted white;
   }
   .nodebase {
     position: relative;
@@ -352,19 +352,18 @@ body {
   
   .extrusionbase .extrude {
     visibility: hidden;
-    width: 400px;
-    background-color: #555;
+    width: 100%;
+    background-color: #212121;
     color: #fff;
     text-align: center;
-    border-radius: 6px;
     padding: 5px 0;
     position: absolute;
-    z-index: 5;
-    top: 94%;
+    z-index: 25;
+    top: 100%;
     left: 40%;
     margin-left: -60px;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.25s;
   }
   
   .extrusionbase:hover .extrude {

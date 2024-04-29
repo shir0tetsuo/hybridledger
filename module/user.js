@@ -136,7 +136,7 @@ class UserAccount
 
         this.userName = username
         this.publicName = username
-        this.userEmail = 'example@example.com'
+        this.userEmail = 'ghost@localhost'
 
         // admins get a calculated golden shim
         this.vertA = undefined // deterministic

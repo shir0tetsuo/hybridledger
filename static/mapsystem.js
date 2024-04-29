@@ -4,53 +4,26 @@ function Hexadecimal(toHex){
 }
 
 var cells = [ ] // makes it easier to drag cells around and apply functions
+var blockUUID;
 
-class LedgerCell
-{
-    constructor(positionX, positionY)
-    {
-        this.position = {
-            X: positionX, xX: Hexadecimal(positionX),
-            Y: positionY, xY: Hexadecimal(positionY),
-            cellX: positionX*125 + positionX*5,
-            cellY: positionY*125 + positionY*5
-        }
+/**
+ * Initialize blockElement
+ * 
+ * @param {uuid} blockUUID 
+ */
+function initCell(blockUUID) {
 
-        this.drawn = false // change to true when cell has been loaded fully
+    var blockCell = document.getElementById('Cell'+blockUUID)
+    var blockType = parseInt(document.getElementById('type'+blockUUID).innerHTML);
 
-        this.address = `${this.position.xX},${this.position.xY}`
+    var mintable = document.getElementById('mint'+blockUUID).innerHTML;
 
-        this.cell = document.createElement('div')
-        // => decorate and push to document with loading indicator
-
+    if (mintable == 'true') {
+        toggle('canMint'+blockUUID)
     }
 
-    /**
-     * Get the default information from server
-     * regarding the ownership of the ledger
-     */
-    async getLastBlock()
-    {
-        $.ajax({
-            type: "POST",
-            url: "/ledger/" + this.address,
-            data: {
-                lastBlock: true
-            },
-            success: function(data) {
-                return data
-            },
-            error: function(data) {
-                console.log(data)
-            }
-        })
-    }
-}
+    if (blockType == 2) blockCell.style.backgroundColor = '#0000ff33'
+    if (blockType == 5) blockCell.style.backgroundColor = '#ff000033'
 
-async function callServerLedger(positionX, positionY)
-{
-    LC = new LedgerCell(positionX, positionY)
-    data = await LC.getLastBlock()
-    console.log(`${positionX}, ${positionY}`)
-    return data
+    console.log('Initialized',blockUUID,blockType)
 }
