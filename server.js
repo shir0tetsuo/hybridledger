@@ -78,6 +78,8 @@ require("dotenv").config();
 // the start time of the application
 let application_start = new Date();
 
+let accountTypes = ['Guest', 'User', 'Moderator', 'Administrator']
+let blockTypes = ['Empty','Genesis','Minted','Transaction','Acquirement','Locked','Obfuscated']
 /*
 
   #################################################################################
@@ -187,7 +189,7 @@ class siteMetadata
    */
   pushUACToVariables()
   {
-    let accountTypes = ['Guest', 'User', 'Moderator', 'Administrator']
+    
     this.variablesToReplace['userUUID'] = this.uac.userUUID
     this.variablesToReplace['userName'] = this.uac.userName
     this.variablesToReplace['userEmail'] = this.uac.userEmail
@@ -225,6 +227,61 @@ class siteMetadata
    */
   incrementHexString(hexString) { var bigInt = BigInt(`0x${hexString}`)++; return bigInt.toString(16) }
 
+
+  /**
+   * Pass Inspected Block to Site Meta Variables.
+   * 
+   * @param {dict} Inspection 
+   */
+  pushBlockVariables(Inspection)
+  {
+    this.pushVariable('ledger_size', Inspection.ledger.size)
+    this.pushVariable('ledger_maxidx', Inspection.ledger.size-1)
+    this.pushVariable('ledger_position', Inspection.ledger.position)
+    this.pushVariable('ledger_value', Inspection.ledger.value)
+    this.pushVariable('ledger_pristine', Inspection.ledger.pristine)
+    this.pushVariable('ledger_own', Inspection.ledger.ledgerOwnership)
+    this.pushVariable('ledger_own_userName', Inspection.ledger.ledgerOwnershipAccount.userName)
+    this.pushVariable('ledger_own_userUUID', Inspection.ledger.ledgerOwnershipAccount.userUUID)
+    this.pushVariable('ledger_own_accountType', Inspection.ledger.ledgerOwnershipAccount.accountType)
+    this.pushVariable('ledger_own_accountTypeStr', Inspection.ledger.ledgerOwnershipAccount.accountTypeStr)
+    this.pushVariable('ledger_own_pubName', Inspection.ledger.ledgerOwnershipAccount.publicName)
+    this.pushVariable('ledger_own_emoji', Inspection.ledger.ledgerOwnershipAccount.emoji)
+    this.pushVariable('ledger_own_created', Inspection.ledger.ledgerOwnershipAccount.created)
+    this.pushVariable('ledger_own_email', Inspection.ledger.ledgerOwnershipAccount.userEmail)
+    this.pushVariable('ledger_prevts', Inspection.ledger.prevTS)
+    this.pushVariable('ledger_nextts', Inspection.ledger.nextTS)
+    this.pushVariable('ledger_lastts', Inspection.ledger.lastblkTS)
+    this.pushVariable('ledger_genesists', Inspection.ledger.genesisTS)
+    this.pushVariable('ledger_area',Inspection.ledger.area)
+    this.pushVariable('ledger_prevlink', Inspection.ledger.prevLink)
+    this.pushVariable('ledger_nextlink', Inspection.ledger.nextLink)
+    this.pushVariable('blk_hash',Inspection.block.mint.hash)
+    this.pushVariable('blk_idx', Inspection.block.mint.index)
+    this.pushVariable('blk_uuid', Inspection.block.mint.uuid)
+    this.pushVariable('blk_type', Inspection.block.mint.blockType)
+    this.pushVariable('blk_typeStr', Inspection.block.mint.blockTypeStr)
+    this.pushVariable('blk_diff', Inspection.block.mint.hashDifficulty)
+    this.pushVariable('blk_prevhash', Inspection.block.previousHash)
+    this.pushVariable('blk_minted', Inspection.block.mint.xMinted)
+    this.pushVariable('blk_nonce', Inspection.block.mint.xNonce)
+    this.pushVariable('blk_ts', Inspection.block.mint.timestamp)
+    this.pushVariable('blk_data', Inspection.block.mint.data)
+    this.pushVariable('blk_islastblk', Inspection.block.isLastBlock)
+    this.pushVariable('blk_val', Inspection.block.value)
+    this.pushVariable('blk_own', Inspection.block.ownership)
+    this.pushVariable('blk_qr', Inspection.block.QRCode)
+    this.pushVariable('blk_link', Inspection.block.link)
+    this.pushVariable('blk_own_userName', Inspection.block.ownershipAccount.userName)
+    this.pushVariable('blk_own_userUUID', Inspection.block.ownershipAccount.userUUID)
+    this.pushVariable('blk_own_accountType', Inspection.block.ownershipAccount.accountType)
+    this.pushVariable('blk_own_accountTypeStr', Inspection.block.ownershipAccount.accountTypeStr)
+    this.pushVariable('blk_own_pubName', Inspection.block.ownershipAccount.publicName)
+    this.pushVariable('blk_own_emoji', Inspection.block.ownershipAccount.emoji)
+    this.pushVariable('blk_own_created', Inspection.block.ownershipAccount.created)
+    this.pushVariable('blk_own_email', Inspection.block.ownershipAccount.userEmail)
+  }
+
   /**
    * Pushes matrix site meta variables. 
    * 
@@ -246,12 +303,45 @@ class siteMetadata
       for (let X in positionPoolX) {
         let Inspection = await this.LedgerHandler(`${positionPoolX[X]},${positionPoolY[Y]}`, 0, true)
         //console.log(`LEDGER ${positionPoolX[X]} ${positionPoolY[Y]}`)
+        // TODO: Make Formatted Cell function with Inspection!
         // [cells] => fn->[formattedCells${xy}] => page
         this.pushVariable(`cell${cellY}_${cellX}`,`formattedCell${Inspection.ledger.position}`)
         cellX++
       }
       cellY++
     }
+  }
+
+  /**
+   * Find the modulo of a decimal number by 8.
+   * 
+   * @param {string} hexString 
+   * @returns {number}
+   */
+  findGridValue(hexString) {
+    let decimal = parseInt(hexString, 16);
+    return (Math.floor(decimal/8))
+  }
+
+  /**
+   * Get modulo grid positions for target.
+   * 
+   * @param {string} address 
+   * @returns {string} for href
+   */
+  findGrid(address) {
+    let addr = address.split(',')
+    let xpos;
+    let ypos;
+    try {
+      xpos = this.findGridValue(addr[0])
+      ypos = this.findGridValue(addr[1])
+    } catch {
+      return 'Unknown'
+    } finally {
+      return `${xpos}/${ypos}`
+    }
+
   }
 
   /**
@@ -269,16 +359,47 @@ class siteMetadata
   async LedgerHandler(address, index, useLastBlock = false)
   {
 
+    // TODO : Incorporate Back to Map function.
+
     let HL = await HybridLedgers.callHybridLedger(address);
-    let time_left = await this.uac.timeToMint();
+    //let time_left = await this.uac.timeToMint();
+
+    let gridlink = this.findGrid(address)
   
     var block;
+    let prevTS; let prevLink;
+    let nextTS; let nextLink;
     let idx = parseInt(index)
     if (idx+1 <= HL.ledger.length && useLastBlock == false) {
       block = HL.ledger[idx]
+      if (idx >= 1) {
+        prevTS = HL.ledger[idx-1].timestamp
+        prevLink = process.env.SITEADDRESS + 'b/' + HL.ledger[idx-1]
+      } else {
+        prevTS = 0
+        prevLink = '#'
+      }
+      if (idx+1 < HL.ledger.length) {
+        nextTS = HL.ledger[idx+1].timestamp
+        nextLink = process.env.SITEADDRESS + 'b/' + HL.ledger[idx+1]
+      } else {
+        nextTS = 0
+        nextLink = '#'
+      }
+
     } else {
       // get last of ledger
       block = HL.ledger[HL.ledger.length - 1]
+      if (HL.ledger.length > 1) {
+        prevTS = HL.ledger[HL.ledger.length - 2]
+        prevLink = process.env.SITEADDRESS + 'b/' + HL.ledger[HL.ledger.length - 2]
+
+      } else {
+        prevTS = 0 //block.timestamp
+        prevLink = '#'
+      }
+      nextTS = 0
+      nextLink = '#'
     }
 
     let isLastBlock;
@@ -301,6 +422,7 @@ class siteMetadata
       userName: UDataLedgerOwnership.userName,
       userUUID: UDataLedgerOwnership.userUUID,
       accountType: UDataLedgerOwnership.accountType,
+      accountTypeStr: accountTypes[UDataLedgerOwnership.accountType],
       publicName: UDataLedgerOwnership.publicName,
       emoji: UDataLedgerOwnership.emoji,
       created: UDataLedgerOwnership.created,
@@ -321,6 +443,7 @@ class siteMetadata
       userName: UDataBlockOwnership.userName,
       userUUID: UDataBlockOwnership.userUUID,
       accountType: UDataBlockOwnership.accountType,
+      accountTypeStr: accountTypes[UDataBlockOwnership.accountType],
       publicName: UDataBlockOwnership.publicName,
       emoji: UDataBlockOwnership.emoji,
       created: UDataBlockOwnership.created,
@@ -340,6 +463,14 @@ class siteMetadata
         pristine: HL.checkPristine(),
         ledgerOwnership: HL.lastBlock.ownership,
         ledgerOwnershipAccount: publicLedgerUAC,
+        genesisTS: HL.ledger[0].timestamp,
+        lastblkTS: HL.lastBlock.timestamp,
+        prevTS: prevTS,
+        prevLink: prevLink,
+        nextTS: nextTS,
+        nextLink: nextLink,
+        //lastLink: HL.lastBlock.blockType,
+        area: process.env.SITEADDRESS + 'gate/last/' + gridlink
       },
 
       block: {
@@ -348,7 +479,7 @@ class siteMetadata
           uuid: block.uuid,
           hash: await block.getHash(),
           blockType: block.blockType,
-          blockTypeStr: ['Empty','Genesis','Minted','Transaction','Acquirement','Locked','Obfuscated'][block.blockType],
+          blockTypeStr: blockTypes[block.blockType],
           hashDifficulty: block.getDifficulty(),
           xMinted: block.minted,
           xNonce: block.nonce,
@@ -549,6 +680,11 @@ server.get('/gate/last/:xpos/:ypos', async(req, res) => {
 
   await siteMeta.BlockMatrix(xpos, ypos)
 
+  siteMeta.pushVariable('navWest', `/gate/last/${parseInt(xpos)-1}/${ypos}`)
+  siteMeta.pushVariable('navEast', `/gate/last/${parseInt(xpos)+1}/${ypos}`)
+  siteMeta.pushVariable('navNorth', `/gate/last/${xpos}/${parseInt(ypos)+1}`)
+  siteMeta.pushVariable('navSouth', `/gate/last/${xpos}/${parseInt(ypos)-1}`)
+  
   const page_header = await replace('./private/header.html', siteMeta)
   const page_nav = await replace('./private/gate/navigator.html', siteMeta)
   // const page_nav_fn = await siteMeta.fnHandler()...
@@ -702,9 +838,6 @@ server.post('/uac/login', async(req, res) => {
     /hl/:address/:index (return json of ledger index)
   #################################################################################
 
-  NOTE: Might move data here to function for in-system calling than
-        burden the user with call requests.
-
 */
 server.get('/hl/:address/:index', async (req, res) => {
 
@@ -751,7 +884,40 @@ server.get('/hl/:address/:index/qr', async (req, res) => {
   #################################################################################
 
 */
+
+// redirect /b/:address/:index to /b/:uuid
+server.get('/b/:address/:index', async(req, res) => {
+
+  const { address, index } = req.params;
+  if (!address||address==undefined||!index||index==undefined||isNaN(index)) { return res.status(404).send({error: "Bad Address."}) }
+
+  var siteMeta = new siteMetadata()
+
+  siteMeta.pushVariable('SITENAME', 'Redirect')
+
+  let HL = await HybridLedgers.callHybridLedger(address);
+
+  let block;
+  if (index >= HL.ledger.length || index < 0) { block = HL.lastBlock }
+  else { block = HL.ledger[index] }
+
+  let siteRedirect = process.env.SITEADDRESS + 'b/' + block.uuid
+
+  siteMeta.pushVariable('301redirect',siteRedirect)
+
+  let page_header = await replace('./private/header.html', siteMeta)
+
+  let page_redir = await replace('./private/301.html', siteMeta)
+
+  let data = page_header + page_redir
+
+  res.status(301).send(data)
+
+})
+
+
 server.get('/b/:uuid', async (req, res) => {
+
   const { uuid } = req.params;
 
   var siteMeta = new siteMetadata()
@@ -760,7 +926,25 @@ server.get('/b/:uuid', async (req, res) => {
 
   var uac = await siteMeta.UACHandler(req)
 
-  let time_left = await uac.timeToMint()
+  let Inspection;
+  let dbBlock = await db.Ledgers.findOne({where: { uuid: uuid }})
+  if (!dbBlock || dbBlock == undefined) {
+    Inspection = await siteMeta.LedgerHandler('0,0',0,false)
+  } else {
+    Inspection = await siteMeta.LedgerHandler(dbBlock.position,dbBlock.index,false)
+  }
+
+  siteMeta.pushBlockVariables(Inspection)
+
+  let page_header = await replace('./private/header.html', siteMeta)
+  let page_nav = await replace('./private/gate/navigator.html', siteMeta)
+  let page_main = await replace('./private/gate/block.html', siteMeta)
+
+  let data = page_header + page_nav + page_main
+
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+
+  /*let time_left = await uac.timeToMint()
 
   let dbBlock = await db.Ledgers.findOne({where: { uuid: uuid }})
 
@@ -800,9 +984,9 @@ server.get('/b/:uuid', async (req, res) => {
 
   let page_main = await replace('./private/gate/block.html', siteMeta)
 
-  let data = page_header + page_nav + page_main
+  let data = page_header + page_nav + page_main*/
   
-  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+  
 
 })
 

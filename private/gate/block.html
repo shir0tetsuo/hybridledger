@@ -7,10 +7,10 @@
                 <div class="loginbox">
                     
                     <div style="margin: auto; text-align: center; width: 155px; position: relative; z-index: 1;">
-                        <img src="${blockQR}">
+                        <img src="${blk_qr}">
                         <!-- TODO: Implement emoji per block ...-->
-                        <a href="${DISCORDSITENAME}hl/${blockPosition}/${blockIndex}">${blockPosition}</a>
-                        <br><gold>index[${blockIndex}]</gold><br><level>${blockTypeStr}</level>
+                        <a title="View JSON" style="font-size:larger;" href="${DISCORDSITENAME}hl/${ledger_position}/${blk_idx}">${ledger_position}</a>
+                        <br><gold>index[${blk_idx}/${ledger_maxidx}]</gold><br><level>${blk_typeStr}</level>
                     </div>
                 </div>
             </blockquote>
@@ -24,21 +24,25 @@
                 </div>
                 <div style="padding: 5px; left: 10px;"><span>&nbsp;Time Data</span></div>
                 <div style="font-size: smaller; padding-left: 5px; padding-bottom: 5px;">
-                    <gold>Latest</gold>
+                    <a title="Go to Latest Block" href="${ledger_position}/-1"><blue>Latest</blue></a>
                     <span id="latestTS">- --:--:--</span> ago<br>
-                    <level>--- --- ---- -- --- --- -</level>
+                    <level><span id="latestTSStr">--- --- ---- -- --- --- -</span></level>
                     <br><br>
-                    <b>Created</b>
+                    <a title="Go to Next Block" id="nxBlockLink"><level>Next</level></a>
+                    <span id="nextTS">- --:--:--</span> ago<br>
+                    <level id="nextTSStr">--- --- ---- -- --- --- -</level>
+                    <br><br>
+                    <a title="This Block (reload this page)" href="javascript:location.reload(true)"><b>Created</b></a>
                     <span id="blockTS">- --:--:--</span> ago<br>
-                    <level>${blockTSStr}</level>
+                    <level id="blockTSStr">--- --- ---- -- --- --- -</level>
                     <br><br>
-                    <gold>Previous</gold>
-                    <span id="previousTS">- --:--:--</span> ago<br>
-                    <level>--- --- ---- -- --- --- -</level>
+                    <a title="Go to Previous Block" id="pvBlockLink"><gold>Previous</gold></a>
+                    <span id="prevTS">- --:--:--</span> ago<br>
+                    <level id="prevTSStr">--- --- ---- -- --- --- -</level>
                     <br><br>
-                    Genesis
+                    <a title="Go to Genesis Block" href="${ledger_position}/0">Genesis</a>
                     <span id="genesisTS">- --:--:--</span> ago<br>
-                    <level>--- --- ---- -- --- --- -</level>
+                    <level id="genesisTSStr">--- --- ---- -- --- --- -</level>
                 </div>
             </blockquote>
 
@@ -50,8 +54,25 @@
                     </span>
                 </div>
                 <div style="padding: 5px; left: 10px;"><span>&nbsp;Ledger</span></div>
-                <div class="loginbox">
-                    Information about Ledger.
+                <div>
+                    <span style="position: relative; z-index: 3; top: 60px; left: 15px; font-size: smaller; color: hsla(0, 0%, 100%, 0.11);">${ledger_position} Hybrid Ledger Ownership:</span>
+                </div>
+                <div class="loginbox" style="min-width:70%;">
+                    <div style="width: 95%; padding: 5px; cursor: default;">
+                        
+                        <br>
+                        <a class="phasedYel" href="/user/${ledger_own}">${ledger_own_emoji} <level>${ledger_own_accountTypeStr} ${ledger_own_pubName}</level> (@${ledger_own_userName})</a><br>
+                                <div style="font-size: xx-small;">
+                                    U-${ledger_own}
+                                    <br>${ledger_own_email}
+                                </div>
+                    </div>
+                </div>
+                <div style="font-size: smaller; padding: 5px;">
+                    <span title="Value of the Ledger in total.">VALUE: ${ledger_value}</span>
+                    <br><span title="Ledger Data OK" style="font-size: smaller;">PRISTINE: ${ledger_pristine}</span>
+                    
+                    
                 </div>
             </blockquote>
 
@@ -64,18 +85,114 @@
                     </span>
                 </div>
                 <div style="padding: 5px; left: 10px;"><span>&nbsp;Mint</span></div>
-                <div class="loginbox">
-                    ${blockData}
+                <!-- General Padding Style -->
+                <div style="width: 95%; padding: 5px; cursor: default;">
+                    <!-- Data -->
+                    <span style="padding-left: 10px; font-size: x-large;" title="Record of Ownership UUID"><a class="phasedBlue" onclick="toggle('userSection')" href="#userSection">U-${blk_own}</a></span>
+
+                    <br>
+                    <span style="font-size: larger; padding-left: 25px;">${blk_own_emoji} <span title="Block Data">${blk_data}</span></span>
+                    <br><br>
+                    <!-- Identity -->
+                    <div style="font-size: xx-small;">
+                        <div style="z-index: 2; left: -3px; top: 0px; position: relative; float: left;">
+                            <span class="material-symbols-outlined">
+                                fingerprint
+                            </span>
+                        </div>
+                        <div style="float: left;">
+                            <span title="Block UUID">UUID: ${blk_uuid}</span>
+                            <br><span title="Block Hash">HASH: ${blk_hash}</span>
+                            <br><span title="Previous Block Hash">PREV: ${blk_prevhash}</span>
+                            <br><span title="Type of Block">TYPE: ${blk_typeStr} Block</span>
+                            <br><span title="Block Mint Difficulty">DIFF: Difficulty ${blk_diff}</span>
+                            <br><span title="Block Times Minted">MINT: #${blk_minted}</span>
+                            <br><span title="Block Nonce">NONC: ${blk_nonce}</span>
+                        </div>
+                    </div>
+                    <br>
+                    <div>
+                        <div>
+                            <span title="Block Value at time of inspection">VALUE: ${blk_val}</span>
+                            <div style="font-size: small;">
+                                <div>
+                                    
+                                    <span title="Block is Last Block in Ledger">LAST BLOCK: ${blk_islastblk}</span>
+                                </div>
+                            </div>
+                            <!-- Account Color Effects should go here. -->
+                            <div class="loginbox" id="userSection" style="display: none;">
+                                <a class="phasedYel" href="/user/${blk_own_userUUID}">${blk_own_emoji} <level>${blk_own_accountTypeStr} ${blk_own_pubName}</level> (@${blk_own_userName})</a><br>
+                                <div style="font-size: xx-small;">
+                                    U-${blk_own_userUUID}
+                                    <br>${blk_own_email}
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    
+
                 </div>
             </blockquote>
         </div>
 
-        <!-- ts -> tick -->
-        <span id="blockTSinit" style="display: none;">${blockTS}</span>
+        <!-- ts -> tick, inits -->
+        <div style="display: none;">
+            <span id="latestTSinit" style="display: none;">${ledger_lastts}</span>
+            <span id="nextTSinit" style="display: none;">${ledger_nextts}</span>
+            <span id="blockTSinit" style="display: none;">${blk_ts}</span>
+            <span id="prevTSinit" style="display: none;">${ledger_prevts}</span>
+            <span id="genesisTSinit" style="display: none;">${ledger_genesists}</span>
+    
+            <span id="pvBlockLinkInit" style="display: none;" >${ledger_prevlink}</span>
+            <span id="nxBlockLinkInit" style="display: none;" >${ledger_nextlink}</span>
+        </div>
+        
         
         <script type="text/javascript">
-            let blockTS = document.getElementById('blockTSinit').innerHTML;
-            rotateTS('blockTS', blockTS)
+            // get plaintext date/time
+            function getTimeString(ts){
+                if (parseInt(ts) == 0) { return '--- --- ---- -- --- --- -' }
+                var tsstring = new Date(parseInt(ts)).toLocaleString()
+                return tsstring
+            }
+
+            function getLinks(){
+                
+                hrefPv = document.getElementById('pvBlockLinkInit').innerHTML;
+                hrefNx = document.getElementById('nxBlockLinkInit').innerHTML;
+                
+                if (hrefPv != '#') { document.getElementById('pvBlockLink').href = hrefPv }
+                if (hrefNx != '#') { document.getElementById('nxBlockLink').href = hrefNx }
+                
+            }
+
+            function initialize(){
+                toggle('backToGrid')
+                console.log('Init TS ...')
+                // <= xTSinit(ts)
+                let latestTS = document.getElementById('latestTSinit').innerHTML;
+                let nextTS = document.getElementById('nextTSinit').innerHTML;
+                let blockTS = document.getElementById('blockTSinit').innerHTML;
+                let prevTS = document.getElementById('prevTSinit').innerHTML;
+                let genesisTS = document.getElementById('genesisTSinit').innerHTML;
+                // => 
+                rotateTS('latestTS', latestTS)
+                rotateTS('nextTS', nextTS)
+                rotateTS('blockTS', blockTS)
+                rotateTS('prevTS', prevTS)
+                rotateTS('genesisTS', genesisTS)
+                document.getElementById('latestTSStr').innerHTML = getTimeString(latestTS)
+                document.getElementById('nextTSStr').innerHTML = getTimeString(nextTS)
+                document.getElementById('blockTSStr').innerHTML = getTimeString(blockTS)
+                document.getElementById('prevTSStr').innerHTML = getTimeString(prevTS)
+                document.getElementById('genesisTSStr').innerHTML = getTimeString(genesisTS)
+            }
+
+            initialize()
+            getLinks()
+            
         </script>
         <!-- end ts tick -->
         <br>

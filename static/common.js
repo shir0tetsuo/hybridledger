@@ -35,6 +35,7 @@ function getUptime()
 
 function rotateTS(element, ts)
 {
+    //console.log(`element ${element} ts ${ts}`)
     var elementArea = document.getElementById(element)
     let stamp = new Date(parseInt(ts))
 
@@ -50,7 +51,9 @@ function rotateTS(element, ts)
     var seconds = Math.floor(diff % 60);
 
     // set the innerHTML of element to the formatted time
-    elementArea.innerHTML = `${days}d:${hours}h:${minutes}m:${seconds}s`;
+    if (parseInt(ts) == 0) { elementArea.innerHTML = `--:--:--:--`; }
+    else { elementArea.innerHTML = `${days}d:${hours}h:${minutes}m:${seconds}s`; }
+    
 
     setTimeout(() => {
         rotateTS(element, ts)
