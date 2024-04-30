@@ -328,6 +328,7 @@ class siteMetadata
         this.pushVariable(`ledgerOwnerUsername`, Inspection.ledger.ledgerOwnershipAccount.userName)
         this.pushVariable(`ledgerOwnEmail`, Inspection.ledger.ledgerOwnershipAccount.userEmail)
         this.pushVariable(`blockMintable`, Inspection.authorization.canMint)
+        this.pushVariable(`ledgerZone`, Inspection.ledger.xypos)
 
         let Element = await replace('./private/gate/blockElement.html',this)
 
@@ -481,6 +482,13 @@ class siteMetadata
     let blkOwnIsUAC;
     if (block.ownership == this.uac.userUUID) { blkOwnIsUAC = true } else { blkOwnIsUAC = false };
 
+    let BlockData;
+    if (block.blockType == 6 && blkOwnIsUAC == false)
+    {
+      BlockData = 'Secret'
+    } else {
+      BlockData = block.data
+    }
 
     var Inspection = {
       ledger: {
@@ -497,7 +505,8 @@ class siteMetadata
         nextTS: nextTS,
         nextLink: nextLink,
         //lastLink: HL.lastBlock.blockType,
-        area: process.env.SITEADDRESS + 'gate/last/' + gridlink
+        area: process.env.SITEADDRESS + 'gate/last/' + gridlink,
+        xypos: gridlink
       },
 
       block: {
@@ -511,7 +520,7 @@ class siteMetadata
           xMinted: block.minted,
           xNonce: block.nonce,
           timestamp: block.timestamp,
-          data: block.data,
+          data: BlockData,
         },
         isLastBlock: isLastBlock,
         previousHash: block.previousHash,
