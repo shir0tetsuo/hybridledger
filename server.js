@@ -932,6 +932,8 @@ server.get('/mint/:address', async (req, res) => {
     POST /mint/:address ==200=> goto grid
   #################################################################################
 
+  NOTE: NOT SECURE.
+  
 */
 server.post('/mint/:address', async (req, res) => {
 
@@ -940,13 +942,7 @@ server.post('/mint/:address', async (req, res) => {
   let reqBlockType;
   let reqBlockData;
   if (!req.body.blockType || req.body.blockType == undefined) { reqBlockType = 2 } else { reqBlockType = req.body.blockType }
-  if (!req.body.blockData || req.body.blockData == undefined) { 
-    reqBlockData == 'Empty'
-    } else { 
-      if (req.body.blockData == '') { reqBlockData == 'Empty' } else {
-        reqBlockData = req.body.blockData
-      }
-    }
+  if (!req.body.blockData || req.body.blockData == undefined || req.body.blockData == '') { reqBlockData = 'Empty'} else { reqBlockData = req.body.blockData }
   
   // TODO: Implement server-side blockType security.
 

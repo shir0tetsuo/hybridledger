@@ -11,6 +11,11 @@ function getTimeleft(timeleft)
     }, 1000)
 }
 
+function getTxbLength(inputElementID, outputElementID)
+{
+    return document.getElementById(outputElementID).innerHTML = document.getElementById(inputElementID).value.length;
+}
+
 function getUptime()
 {
     // get the innerHTML of element ID "uptime"

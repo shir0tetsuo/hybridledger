@@ -2,7 +2,7 @@
     <body>
         <br><br>
         <div class="container">
-            <blockquote style="height: 75px;" class="loginbox">
+            <blockquote style="height: 130px;" class="loginbox">
                 <div style="float: left; width: 50%; flex: auto;">
                 <form>
                     <!-- DROPDOWN: TYPE OF BLOCK TO MINT (0-6) -->
@@ -28,8 +28,11 @@
 
                     -->
                     <br>
-                    <textarea style="background-color: #36393e; color: #d7d7d7;" placeholder="Enter Block Data" id="blockData"></textarea>
-                    
+                    <textarea onkeydown="getTxbLength('blockData','txbl')" onkeypress="getTxbLength('blockData','txbl')" onkeyup="getTxbLength('blockData','txbl')" style="background-color: #36393e; color: #d7d7d7;" placeholder="Enter Block Data" id="blockData"></textarea>
+                    <br>
+                    <div style="font-size: smaller" >
+                        <span id="txbl">0</span>/4096
+                    </div>
                     <br><br>
                     <div class="submitbox">
                         <input style="height: 50px; width: 100px; font-size: larger;" id="submit" type="button" value="Mint">
@@ -48,6 +51,7 @@
         </div>
         <script type="text/javascript">
             toggle('backToGrid')
+            getTxbLength('blockData','txbl')
 
             //jQuery POST request to /mint/
             $("#submit").click(function(){
