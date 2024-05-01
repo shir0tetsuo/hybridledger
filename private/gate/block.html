@@ -54,6 +54,9 @@
                     </span>
                 </div>
                 <div style="padding: 5px; left: 10px;"><span>&nbsp;Ledger</span></div>
+                <div id="userCanMint" style="padding: 5px; width: 90%; height: 5px;">
+                    <a href="/mint/${ledger_position}">Mint New Block</a>
+                </div>
                 <div>
                     <span style="position: relative; z-index: 3; top: 60px; left: 15px; font-size: smaller; color: hsla(0, 0%, 100%, 0.11);">${ledger_position} Hybrid Ledger Ownership:</span>
                 </div>
@@ -147,6 +150,8 @@
     
             <span id="pvBlockLinkInit" style="display: none;" >${ledger_prevlink}</span>
             <span id="nxBlockLinkInit" style="display: none;" >${ledger_nextlink}</span>
+
+            <span id="userAuth">${uac_can_mint}</span>
         </div>
         
         

@@ -29,6 +29,11 @@ function getLinks(){
 function initialize(){
     // enable back to grid icon
     toggle('backToGrid')
+
+    let canMint = document.getElementById('userAuth').innerHTML;
+
+    if (canMint == 'true') toggle('userCanMint')
+
     // <= xTSinit(ts)
     let latestTS = document.getElementById('latestTSinit').innerHTML;
     let nextTS = document.getElementById('nextTSinit').innerHTML;

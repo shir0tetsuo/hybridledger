@@ -291,6 +291,7 @@ class siteMetadata
     this.pushVariable('blk_own_emoji', Inspection.block.ownershipAccount.emoji)
     this.pushVariable('blk_own_created', Inspection.block.ownershipAccount.created)
     this.pushVariable('blk_own_email', Inspection.block.ownershipAccount.userEmail)
+    this.pushVariable('uac_can_mint', Inspection.authorization.canMint)
   }
 
   /**
@@ -939,7 +940,15 @@ server.post('/mint/:address', async (req, res) => {
   let reqBlockType;
   let reqBlockData;
   if (!req.body.blockType || req.body.blockType == undefined) { reqBlockType = 2 } else { reqBlockType = req.body.blockType }
-  if (!req.body.blockData || req.body.blockData == undefined) { reqBlockData = "Empty" } else { reqBlockData = req.body.blockData }
+  if (!req.body.blockData || req.body.blockData == undefined) { 
+    reqBlockData == 'Empty'
+    } else { 
+      if (req.body.blockData == '') { reqBlockData == 'Empty' } else {
+        reqBlockData = req.body.blockData
+      }
+    }
+  
+  // TODO: Implement server-side blockType security.
 
   if (!address || address == undefined) return res.status(200).send({error: 'Cannot identify address.'})
 
