@@ -31,7 +31,9 @@
         after it's been loaded. Will have to follow up on the npm dev or inspect
         SQLite3/sequelize.
   TODO: Standardize DIV's in pages and add dynamic color.
-  
+  TODO: Touch up DIVs, add minting capability to the Block itself, more block security,
+        and write the transaction system properly & test it.
+
   NOTE: Remember that changes to user attributes must be reflected in
         database as well as active login (loggedIn) class
 */
@@ -316,6 +318,7 @@ class siteMetadata
         this.pushVariable(`blockTimestamp`, Inspection.block.mint.timestamp)
         this.pushVariable(`ledgerPosition`, Inspection.ledger.position)
         this.pushVariable(`blockData`, Inspection.block.mint.data)
+        this.pushVariable(`blockDataTrimmed`, Inspection.block.mint.dataTrimmed)
         this.pushVariable(`ledgerEmoji`, Inspection.ledger.ledgerOwnershipAccount.emoji)
         this.pushVariable(`blockIndex`, Inspection.block.mint.index)
         this.pushVariable(`blockTimestamp`, Inspection.block.mint.timestamp)
@@ -483,11 +486,15 @@ class siteMetadata
     if (block.ownership == this.uac.userUUID) { blkOwnIsUAC = true } else { blkOwnIsUAC = false };
 
     let BlockData;
+    let BlockDataTrimmed;
     if (block.blockType == 6 && blkOwnIsUAC == false)
     {
       BlockData = 'Secret'
+      BlockDataTrimmed = 'Secret'
     } else {
       BlockData = block.data
+      if (block.data.length > 64) { BlockDataTrimmed = block.data.substring(0,64) + '...' } else { BlockDataTrimmed = block.data }
+      //if (block.data.length > 70) { BlockData = block.data.substring(0,70) + '<level>...</level>' } else { BlockData = block.data }
     }
 
     var Inspection = {
@@ -521,6 +528,7 @@ class siteMetadata
           xNonce: block.nonce,
           timestamp: block.timestamp,
           data: BlockData,
+          dataTrimmed: BlockDataTrimmed,
         },
         isLastBlock: isLastBlock,
         previousHash: block.previousHash,
@@ -883,6 +891,98 @@ server.post('/uac/login', async(req, res) => {
 
 })
 
+/*
+
+  #################################################################################
+    /mint/:address
+  #################################################################################
+
+*/
+server.get('/mint/:address', async (req, res) => {
+
+  // This should be done, don't touch this unless necessary
+
+  const { address } = req.params;  
+
+  if (!address || address == undefined) return res.status(200).send({error: 'Cannot identify address.'})
+
+  var siteMeta = new siteMetadata()
+  var uac = await siteMeta.UACHandler(req)
+
+  let Inspection = await siteMeta.LedgerHandler(address, 0, true)
+
+  siteMeta.pushBlockVariables(Inspection)
+
+  if (Inspection.authorization.canMint == false) { return res.status(401).send({error: "Unauthorized Mint."}) }
+
+  let page_header = await replace('./private/header.html',siteMeta)
+  let page_nav = await replace('./private/gate/navigator.html', siteMeta)
+  let page_controls = await replace('./private/gate/mint/mintPage.html', siteMeta)
+
+  let data = page_header + page_nav + page_controls
+
+  res.status(200).send(data)
+
+})
+
+/*
+
+  #################################################################################
+    POST /mint/:address ==200=> goto grid
+  #################################################################################
+
+*/
+server.post('/mint/:address', async (req, res) => {
+
+  const { address } = req.params;
+
+  let reqBlockType;
+  let reqBlockData;
+  if (!req.body.blockType || req.body.blockType == undefined) { reqBlockType = 2 } else { reqBlockType = req.body.blockType }
+  if (!req.body.blockData || req.body.blockData == undefined) { reqBlockData = "" } else { reqBlockData = req.body.blockData }
+
+  if (!address || address == undefined) return res.status(200).send({error: 'Cannot identify address.'})
+
+  var siteMeta = new siteMetadata()
+  var uac = await siteMeta.UACHandler(req)
+
+  let Inspection = await siteMeta.LedgerHandler(address, 0, true)
+
+  let HL = await HybridLedgers.callHybridLedger(address)
+
+  if (Inspection.authorization.canMint == false) { return res.status(401).send({error: "Unauthorized Mint."}) }
+  
+  let blockRequest;
+  blockRequest = {
+    blockType: reqBlockType,
+    blockData: reqBlockData.substring(0,4096)
+  }
+
+  console.log(blockRequest)
+
+  // If only default Empty block present, mint a Genesis block as well.
+  if (HL.lastBlock.blockType == 0 && HL.lastBlock.index == 0 && Inspection.ledger.size == 1) {
+    var genesisBlock = HL.ledger[0]
+    let genesisDataHash = genesisBlock.hash
+    genesisBlock.blockType = 1
+    genesisBlock.data = `Genesis <span style="font-size: smaller;">[${genesisDataHash}]</span>`
+    genesisBlock.ownership = uac.userUUID
+    genesisBlock.timestamp = new Date().getTime()
+    await genesisBlock.mint(2)
+    await HL.commit(genesisBlock)
+    //await HL.commit(genesisBlock)
+  } //else {
+    // Do not forget case condition where transactions must occur!
+    // Transactions must mint over a random user owned ledger!
+    //
+    //}
+  var newBlock = new Block(HL.lastBlock.index+1, address, uac.userUUID, blockRequest.blockType, blockRequest.blockData, HL.lastBlock.hash)
+  await newBlock.mint(4)
+  await HL.commit(newBlock)
+
+  res.status(200).send({response: "OK!", navigate: Inspection.ledger.area})
+
+})
 
 /*
 

@@ -1,0 +1,62 @@
+<html>
+    <body>
+        <br><br>
+        <div class="container">
+            <blockquote class="loginbox">
+                <form>
+                    <!-- DROPDOWN: TYPE OF BLOCK TO MINT (0-6) -->
+                    Type of Block to Mint:
+                    <select id="blockType">
+                        <option value="0" disabled>Empty</option>
+                        <option value="1" disabled>Genesis</option>
+                        <option value="2">Minted</option>
+                        <option value="3">Transaction</option>
+                        <option value="4" disabled>Acquirement</option>
+                        <option value="5" disabled>Locked</option>
+                        <option value="6">Obfuscated</option>
+                    </select>
+                    
+                    <!--
+                        // Get the select box element
+                        var select = document.getElementById("blockType");
+
+                        // Get the option element you want to toggle
+                        var option = select.options[0];
+
+                        // Toggle the disabled property
+                        option.disabled = !option.disabled;
+
+                    -->
+
+                    <input id="blockData" type="text">
+                    <div class="submitbox">
+                        <input id="submit" type="button" value="Mint">
+                    </div>
+                </form>
+            </blockquote>
+        </div>
+        <script type="text/javascript">
+            toggle('backToGrid')
+
+            //jQuery POST request to /mint/
+            $("#submit").click(function(){
+                $.ajax({
+                    type: "POST",
+                    url: "/mint/${ledger_position}",
+                    data: {
+                        blockType: $("#blockType").val(),
+                        blockData: $("#blockData").val()
+                    },
+                    success: function(data){
+                        alert("Block minted successfully!");
+                    },
+                    error: function(data){
+                        alert("Block mint failed!");
+                    }
+                });
+            });
+
+        </script>
+    </body>
+</html>
+
