@@ -277,7 +277,7 @@ class siteMetadata
     this.pushVariable('blk_minted', Inspection.block.mint.xMinted)
     this.pushVariable('blk_nonce', Inspection.block.mint.xNonce)
     this.pushVariable('blk_ts', Inspection.block.mint.timestamp)
-    this.pushVariable('blk_data', Inspection.block.mint.data)
+    this.pushVariable('blk_data', Inspection.block.mint.data.replace(/\n/g, '<br>'))
     this.pushVariable('blk_islastblk', Inspection.block.isLastBlock)
     this.pushVariable('blk_val', Inspection.block.value)
     this.pushVariable('blk_own', Inspection.block.ownership)
@@ -939,7 +939,7 @@ server.post('/mint/:address', async (req, res) => {
   let reqBlockType;
   let reqBlockData;
   if (!req.body.blockType || req.body.blockType == undefined) { reqBlockType = 2 } else { reqBlockType = req.body.blockType }
-  if (!req.body.blockData || req.body.blockData == undefined) { reqBlockData = "" } else { reqBlockData = req.body.blockData }
+  if (!req.body.blockData || req.body.blockData == undefined) { reqBlockData = "Empty" } else { reqBlockData = req.body.blockData }
 
   if (!address || address == undefined) return res.status(200).send({error: 'Cannot identify address.'})
 
@@ -974,6 +974,7 @@ server.post('/mint/:address', async (req, res) => {
   } //else {
     // Do not forget case condition where transactions must occur!
     // Transactions must mint over a random user owned ledger!
+    // "Admin does what admin wants:" can even acquire blocks that users can't afford.
     //
     //}
   var newBlock = new Block(HL.lastBlock.index+1, address, uac.userUUID, blockRequest.blockType, blockRequest.blockData, HL.lastBlock.hash)

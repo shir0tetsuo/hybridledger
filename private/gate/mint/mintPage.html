@@ -2,10 +2,10 @@
     <body>
         <br><br>
         <div class="container">
-            <blockquote class="loginbox">
+            <blockquote style="height: 75px;" class="loginbox">
+                <div style="float: left; width: 50%; flex: auto;">
                 <form>
                     <!-- DROPDOWN: TYPE OF BLOCK TO MINT (0-6) -->
-                    Type of Block to Mint:
                     <select id="blockType">
                         <option value="0" disabled>Empty</option>
                         <option value="1" disabled>Genesis</option>
@@ -27,19 +27,31 @@
                         option.disabled = !option.disabled;
 
                     -->
-
-                    <input id="blockData" type="text">
+                    <br>
+                    <textarea style="background-color: #36393e; color: #d7d7d7;" placeholder="Enter Block Data" id="blockData"></textarea>
+                    
+                    <br><br>
                     <div class="submitbox">
-                        <input id="submit" type="button" value="Mint">
+                        <input style="height: 50px; width: 100px; font-size: larger;" id="submit" type="button" value="Mint">
                     </div>
                 </form>
+            </div>
+            <div style="float: right; width: 50%; flex: auto;">
+                <span style="font-size: 75px;" class="material-symbols-outlined">
+                    <a title="Go to Area" class="phasedYel" href="${ledger_area}">grid_view</a>
+                </span>
+            </div>
+                
             </blockquote>
+            <div id="bounceLoader" style="display: none; float: inherit;" class="bouncing-loader"><div></div><div></div><div></div></div>
+
         </div>
         <script type="text/javascript">
             toggle('backToGrid')
 
             //jQuery POST request to /mint/
             $("#submit").click(function(){
+                document.getElementById('bounceLoader').style.display = 'flex'
                 $.ajax({
                     type: "POST",
                     url: "/mint/${ledger_position}",
@@ -48,9 +60,11 @@
                         blockData: $("#blockData").val()
                     },
                     success: function(data){
+                        document.getElementById('bounceLoader').style.display = 'none'
                         alert("Block minted successfully!");
                     },
                     error: function(data){
+                        document.getElementById('bounceLoader').style.display = 'none'
                         alert("Block mint failed!");
                     }
                 });
