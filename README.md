@@ -2,7 +2,7 @@
 
 Demonstration: https://shadowsword.ca/
 
-![Version](https://img.shields.io/badge/Version-2.3.1-indigo "VER")
+![Version](https://img.shields.io/badge/Version-2.3.1-indigo "VER") ![NOTSECURE](https://img.shields.io/badge/NOT%20SECURE-tomato "NOT SECURE") ![BETA](https://img.shields.io/badge/Beta-ffe100 "Beta")
 
 # Description
 This is a web application that allows users to create and manage a "time-oriented" hybrid ledger system. A hybrid ledger is a centralized position-relative block chain that combines the ability to retroactively inspect the histories of created blocks that contain data values, of which appreciates value over time. Unlike cryptocurrencies,  the system is intended to be used as a personal data storage system, designed to be lightweight and operated on single board computers as personal data storage wallets. It's possible to create new blocks on top of ledgers owned by other users, as long as the user's net value exceeds the value of the ledger to purchase.
