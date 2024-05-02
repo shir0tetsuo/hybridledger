@@ -235,13 +235,13 @@ class HybridLedger
                 {
                     for (const blk of blocks.sort(function(a,b){return a.index-b.index})) 
                     {
-                        console.log(`(db) => ${blk.timestamp} => ${blk.uuid} => ${blk.position} @ ${blk.index}`)
+                        //console.log(`(db) => ${blk.timestamp} => ${blk.uuid} => ${blk.position} @ ${blk.index}`)
                         var BLK = new Block(blk.index,blk.position,blk.ownership,blk.blockType,blk.data,blk.previousHash,blk.minted,blk.nonce,blk.timestamp,blk.uuid)
                         ledger.push(BLK)
                     }
                     
                 }
-                console.log(`LEDGER:`,ledger)
+                //console.log(`LEDGER:`,ledger)
                 this.ledger = ledger
                 return ledger
             })

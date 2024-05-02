@@ -145,7 +145,7 @@ class UserAccount
         this.vertD = undefined // deterministic
         this.emoji = '⛩️' // User-Set Default
 
-        this.created = 'Unknown' // Update from db .createdAt
+        this.created = new Date().getTime() // Update from db .createdAt
 
         // erased at login/registration
         this.passwordToCompare = plaintextPasswd
@@ -166,35 +166,39 @@ class UserAccount
     {
         // Access blocks from db
         let UserBlocks = await db.Ledgers.findAll({where: {ownership: this.userUUID} })
+        //console.log(UserBlocks[0].dataValues) // ?????
         
         // Return zero net value if user has no blocks
         // (zero mint power over other ledgers).
         if (!UserBlocks || UserBlocks == undefined || UserBlocks.length == 0) { return 0 }
         
-
-        // 1 => Get unique positions by user's blocks.
         var uniqueLedgerPositions = []
-        for (let block in UserBlocks) {
-            if (!uniqueLedgerPositions.includes(block.position)) {
-                uniqueLedgerPositions.push(block.position)
+        for (var i in UserBlocks) {
+            if (!uniqueLedgerPositions.includes(UserBlocks[i].dataValues.position)) {
+                uniqueLedgerPositions.push(UserBlocks[i].dataValues.position)
+                //console.log('nv ulp', UserBlocks[i].dataValues.position)
             }
         }
 
         // 2 => If the ledgers' ownerships are account's,
         //      get the ledger's value, push to total value.
         var HLValue = 0;
-        for (let uniquePosition in uniqueLedgerPositions) {
+        for (var i in uniqueLedgerPositions) {
+            let uniquePosition = uniqueLedgerPositions[i]
             // trim lastBlock.ownership != uac.userUUID
             let inspectHL = await HybridLedgers.callHybridLedger(uniquePosition);
             if (inspectHL.lastBlock.ownership == this.userUUID) {
                 // Remove values of blocks that do not include the user's ownership
                 // in the owned ledger stack (therefore absorption not possible)
-                for (let inspectBlk in inspectHL.ledger) {
+                for (var ib in inspectHL.ledger) {
+                    let inspectBlk = inspectHL.ledger[ib]
                     if (inspectBlk.ownership != '0' && inspectBlk.ownership != this.userUUID) {
                         HLValue -= inspectBlk.getValue()
+                        //console.log('HLV',HLValue)
                     }
                 }
                 HLValue += inspectHL.getValue()
+                //console.log('HLV',HLValue)
             }
             
         }
@@ -203,9 +207,11 @@ class UserAccount
         //      from all user's blocks
         //      (data = value to decrease)
         var TXValue = 0;
-        for (let block in UserBlocks) {
+        for (var i in UserBlocks) {
+            let block = UserBlocks[i].dataValues
             if (block.blockType == 3) {
                 TXValue += parseFloat(block.data)
+                //console.log('nv txv',TXValue)
             }
         }
 
@@ -526,6 +532,28 @@ async function callUserAccountAuthPT(plaintextPasswd, username)
 }
 
 /**
+ * Calls User Account from UUID.
+ * 
+ * @param {string} userUUID
+ * @returns {UserAccount}
+ */
+async function callUser(userUUID)
+{
+    const account = await db.Users.findOne({where: {userUUID: userUUID}})
+
+    if (!account || account == undefined)
+    { return new UserAccount(undefined,'None') }
+    else { 
+        var useraccount = new UserAccount(undefined, account.userName, account.userUUID)
+        useraccount.accountType = account.accountType
+        useraccount.emoji = account.emoji
+        useraccount.publicName = account.publicName
+        useraccount.userEmail = account.userEmail
+        useraccount.displayEmail = account.displayEmail
+        return useraccount }
+}
+
+/**
  * Check whether the user exists in db, and if the password matches.
  * 
  * @param {string} userName 
@@ -572,6 +600,8 @@ module.exports = {
     blankAccount,
 
     checkAuthorization,
+
+    callUser,
 
     // uac itself
     UserAccount

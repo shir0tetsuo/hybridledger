@@ -804,7 +804,34 @@ server.get('/user/:uuid', async(req, res) => {
 
   const { uuid } = req.params;
 
-  res.status(200).send({data: "Page is a work in progress."})
+  let user = await Users.callUser(uuid)
+
+  var siteMeta = new siteMetadata()
+  var uac = siteMeta.UACHandler(req)
+  siteMeta.pushVariable('SITENAME', 'User')
+
+  siteMeta.pushVariable('user_name', user.userName)
+  if (user.displayEmail || user.displayEmail == true || user.displayEmail == 'true') {
+    siteMeta.pushVariable('user_email', user.userEmail)
+  } else {
+    siteMeta.pushVariable('user_email', 'ghost@'+process.env.SITE)
+  }
+  
+  let nv = await user.netValue()
+  siteMeta.pushVariable('user_emoji', user.emoji)
+  siteMeta.pushVariable('user_nv', nv)
+  siteMeta.pushVariable('user_uuid', uuid)
+  siteMeta.pushVariable('user_created', user.created)
+  siteMeta.pushVariable('user_publicname', user.publicName)
+  siteMeta.pushVariable('user_accountType', accountTypes[user.accountType])
+
+  let page_header = await replace('./private/header.html',siteMeta)
+  let page_nav = await replace('./private/gate/navigator.html',siteMeta)
+  let page_main = await replace('./private/uac/userPage.html',siteMeta)
+
+  let data = page_header + page_nav + page_main
+
+  res.status(200).send(data)
 })
 
 /*
@@ -903,7 +930,7 @@ server.get('/mint/:address', async (req, res) => {
 
   // This should be done, don't touch this unless necessary
 
-  const { address } = req.params;  
+  const { address } = req.params;
 
   if (!address || address == undefined) return res.status(200).send({error: 'Cannot identify address.'})
 
@@ -1038,12 +1065,10 @@ server.get('/hl/:address/:index/qr', async (req, res) => {
 /*
 
   #################################################################################
-    /b/:uuid (Get block information by UUID)
+    /b/:address/:index (Redirect to /b/:uuid)
   #################################################################################
 
 */
-
-// redirect /b/:address/:index to /b/:uuid
 server.get('/b/:address/:index', async(req, res) => {
 
   const { address, index } = req.params;
@@ -1073,7 +1098,13 @@ server.get('/b/:address/:index', async(req, res) => {
 
 })
 
+/*
 
+  #################################################################################
+    /b/:uuid (Get block information by UUID)
+  #################################################################################
+
+*/
 server.get('/b/:uuid', async (req, res) => {
 
   const { uuid } = req.params;

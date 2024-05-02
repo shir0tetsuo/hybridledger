@@ -201,9 +201,11 @@ class Block
      */
     getDifficulty() { 
         try {
+            //console.log(this.hash)
             var difficulty = this.hash.match(/^0+/)[0].length;
         } catch (e) {
             console.log('Exception occurred at getDifficulty')
+            console.log(e)
             // non-pristine block value is multiplied by zero
             var difficulty = 0;
         }
