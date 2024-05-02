@@ -34,6 +34,10 @@
   TODO: Touch up DIVs, add minting capability to the Block itself, more block security,
         and write the transaction system properly & test it.
 
+  TODO: Block loading optimization! Might save the computer, and processing time!.
+
+  TODO: NV optimization! Compare with loaded blocks!.
+
   NOTE: Remember that changes to user attributes must be reflected in
         database as well as active login (loggedIn) class
 */
@@ -80,6 +84,7 @@ server.use(cookies())
 // Serve static content from /static
 server.use('/static', express.static(path.resolve('./static')))
 server.use('/favicon.ico', express.static(path.resolve('./favicon.ico')))
+server.use('/robots.txt', express.static(path.resolve('./robots.txt')))
 
 // private configuration
 require("dotenv").config();

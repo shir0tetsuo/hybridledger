@@ -1,0 +1,11 @@
+User-Agent: *
+Disallow: /gate/
+
+User-Agent: *
+Disallow: /b/
+
+User-Agent: *
+Disallow: /gate/last/
+
+User-Agent: *
+Disallow: /gate/time/

@@ -1,7 +1,7 @@
 <!-- inspection cell data -->
 <div class="extrusionbase" style="width: 100%;">
     <div id="Cell${blockUUID}" style="width: 95%; background-color: #212121; color: rgba(255, 255, 255, 0.325); padding: 5px;">
-        <a href="${blockURL}">    
+        <a href="${blockURL}" rel="NOFOLLOW">    
             <span style="font-size: x-large;">${ledgerEmoji}</span> ${ledgerPosition} #${blockIndex}
         </a>
     </div>
@@ -18,7 +18,7 @@
         <br>
         
         <div style="background-color: #212121;">
-            <a class="phasedYel" href="${ledgerOwnerLink}">${ledgerEmoji} <level>${ledgerOwnerAcctType} ${ledgerOwnerPubname}</level> (@${ledgerOwnerUsername})</a><br>
+            <a class="phasedYel" href="${ledgerOwnerLink}" rel="NOFOLLOW">${ledgerEmoji} <level>${ledgerOwnerAcctType} ${ledgerOwnerPubname}</level> (@${ledgerOwnerUsername})</a><br>
             <div style="font-size: xx-small;">
                 <span style="font-size:smaller;">U-${ledgerOwn}</span>
                 <br>${ledgerOwnEmail}
@@ -28,7 +28,7 @@
         <!-- Minting -->
         <div style="background-image: url('/static/img/about-bg.gif');">
             <div style="font-size: 36px; display: none; background-color: rgba(70, 122, 62, 0.565);" id="canMint${blockUUID}">
-                <a class="phased" href="/mint/${ledgerPosition}">
+                <a class="phased" href="/mint/${ledgerPosition}" rel="NOFOLLOW">
                     <span style="font-size:50px;" class="material-symbols-outlined">
                         checkbook
                     </span>
@@ -40,7 +40,7 @@
              to enable user to retroactively inspect blocks at the time of its creation -->
         <div style="background-image: url('/static/img/about-bg.gif');">
             <div style="font-size: 36px; display: none; background-color: rgba(212, 178, 26, 0.493);" id="canRetrospect${blockUUID}">
-                <a class="phasedYel" href="/gate/time/${ledgerZone}/${blockUUID}">
+                <a class="phasedYel" href="/gate/time/${ledgerZone}/${blockUUID}" rel="NOFOLLOW">
                     <span style="font-size:50px;" class="material-symbols-outlined">
                         history
                     </span>

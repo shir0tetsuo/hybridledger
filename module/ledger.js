@@ -263,6 +263,7 @@ class HybridLedger
  */
 async function callHybridLedger(position)
 {
+    // TODO : Block load optimization!
     // create hybrid ledger
     HL = await new HybridLedger(position)
     const ledger = await HL.getBlocks()
