@@ -1,6 +1,7 @@
 # HybridLedger
 
 Demonstration: https://shadowsword.ca/
+
 ![Version](https://img.shields.io/badge/Version-2.3.1-indigo "VER")
 
 # Description
