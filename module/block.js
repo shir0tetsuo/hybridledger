@@ -205,6 +205,7 @@ class Block
             var difficulty = this.hash.match(/^0+/)[0].length;
         } catch (e) {
             console.log('Exception occurred at getDifficulty')
+            console.log(this.hash, this.position)
             console.log(e)
             // non-pristine block value is multiplied by zero
             var difficulty = 0;
@@ -273,15 +274,4 @@ class Block
     }
 }
 
-/*class Image {
-    constructor(src) {
-      this.src = src;
-    }
-
-    strip() {
-        var base64Data = this.src.replace(/^data:image\/png;base64,/, "");
-        return 'data:image/png;base64,' + base64Data
-    }
-  }
-*/
 module.exports = Block

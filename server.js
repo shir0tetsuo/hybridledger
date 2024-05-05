@@ -554,7 +554,7 @@ class siteMetadata
         timeToMint: await this.uac.timeToMint(),
         canMint: await Users.checkAuthorization(HL, this.uac),
         ownershipMatchesAccountUUID: blkOwnIsUAC,
-        netValue: await this.uac.netValue(),
+        //netValue: await this.uac.netValue(),
       }
     }
     return Inspection
