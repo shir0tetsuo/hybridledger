@@ -300,6 +300,66 @@ class siteMetadata
   }
 
   /**
+   * Pushes time-based block information to main cells.
+   * 
+   * @param {number} xX Number to multiply matrix cell inspector, horizontal value. Always number, not hex.
+   * @param {number} xY Number to multiply matrix cell inspector, veritcal value. Always number, not hex.
+   * @param {Block} ib Inspection Block Class
+   */
+  async TimeMatrix(xX, xY, ib)
+  {
+    let Mx = 8; // matrix length for x, y
+    var positionPoolX = []; for (var i = xX*Mx; i < (xX*Mx)+Mx; i++) { positionPoolX.push(i.toString(16)) };
+    var positionPoolY = []; for (var i = xY*Mx; i < (xY*Mx)+Mx; i++) { positionPoolY.push(i.toString(16)) };
+
+    // TODO: Get the hybrid ledger and calculate the +/- index button.
+
+
+
+    var cellY = 0
+    for (let Y in positionPoolY.reverse()) {
+      var cellX = 0
+      for (let X in positionPoolX) {
+        let HL = await HybridLedgers.callHybridLedger(`${positionPoolX[X]},${positionPoolY[Y]}`)
+        var xb = HL.ledger[0]; // cell block
+        for (let b in HL.ledger) {
+          if (HL.ledger[b].blockType != 0 && HL.ledger[b].timestamp < ib.timestamp) {
+            xb=HL.ledger[b]
+          }
+        }
+        let Inspection = await this.LedgerHandler(`${positionPoolX[X]},${positionPoolY[Y]}`, xb.index, false)
+      
+        this.pushVariable(`blockUUID`, Inspection.block.mint.uuid)
+        this.pushVariable(`blockTimestamp`, Inspection.block.mint.timestamp)
+        this.pushVariable(`ledgerPosition`, Inspection.ledger.position)
+        this.pushVariable(`blockData`, Inspection.block.mint.data)
+        this.pushVariable(`blockDataTrimmed`, Inspection.block.mint.dataTrimmed)
+        this.pushVariable(`ledgerEmoji`, Inspection.ledger.ledgerOwnershipAccount.emoji)
+        this.pushVariable(`blockIndex`, `${Inspection.block.mint.index}/${Inspection.ledger.size-1}`)
+        this.pushVariable(`blockTimestamp`, Inspection.block.mint.timestamp)
+        this.pushVariable(`blockType`, Inspection.block.mint.blockType)
+        this.pushVariable(`blockURL`, Inspection.block.link)
+        this.pushVariable(`ledgerOwnerAcctType`, Inspection.ledger.ledgerOwnershipAccount.accountTypeStr)
+        this.pushVariable(`ledgerOwnerLink`, '/user/'+ Inspection.ledger.ledgerOwnershipAccount.userUUID)
+        this.pushVariable(`ledgerOwnerPubname`, Inspection.ledger.ledgerOwnershipAccount.publicName)
+        this.pushVariable(`ledgerOwn`, Inspection.ledger.ledgerOwnershipAccount.userUUID)
+        this.pushVariable(`ledgerOwnerUsername`, Inspection.ledger.ledgerOwnershipAccount.userName)
+        this.pushVariable(`ledgerOwnEmail`, Inspection.ledger.ledgerOwnershipAccount.userEmail)
+        this.pushVariable(`blockMintable`, Inspection.authorization.canMint)
+        this.pushVariable(`ledgerZone`, Inspection.ledger.xypos)
+
+        let Element = await replace('./private/gate/blockElement.html',this)
+
+        this.pushVariable(`cell${cellY}_${cellX}`, Element)
+
+        cellX++
+      }
+      cellY++
+    }
+
+  }
+
+  /**
    * Pushes matrix site meta variables. 
    * 
    * This will not be the same handler for time functions.
@@ -711,6 +771,55 @@ server.get('/gate', async(req, res) => {
   let data = page_header + page_nav + page_main
   res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
+})
+
+/*
+
+  #################################################################################
+    /gate/time/:xpos/:ypos/:uuid (Block Timeline Inspection)
+  #################################################################################
+
+*/
+server.get('/gate/time/:xpos/:ypos/:uuid', async(req, res) => {
+
+  const { xpos, ypos, uuid } = req.params;
+
+  if (!xpos||xpos==undefined||isNaN(xpos)){return res.status(404).send({error: 'xpos NaN'})}
+  if (!ypos||ypos==undefined||isNaN(ypos)){return res.status(404).send({error: 'ypos NaN'})}
+  if (!uuid||uuid==undefined){return res.status(404).send({error: 'uuid not defined'})}
+
+  let inspection_block = await db.Ledgers.findOne({where: {uuid: uuid}})
+
+  if (!inspection_block || inspection_block == undefined){return res.status(404).send({error: 'block not found'})}
+
+  
+
+  var siteMeta = new siteMetadata()
+  siteMeta.pushVariable('SITENAME', `Gateway Area ${xpos}:${ypos}`)
+  siteMeta.pushVariable('DISCORDSITEBAR', `Hybrid Ledger Gateway Area X${xpos}:Y${ypos}`)
+
+  var uac = await siteMeta.UACHandler(req)
+
+  await siteMeta.TimeMatrix(xpos, ypos, inspection_block)
+
+  siteMeta.pushVariable('navWest', `/gate/time/${parseInt(xpos)-1}/${ypos}/${uuid}`)
+  siteMeta.pushVariable('navEast', `/gate/time/${parseInt(xpos)+1}/${ypos}/${uuid}`)
+  siteMeta.pushVariable('navNorth', `/gate/time/${xpos}/${parseInt(ypos)+1}/${uuid}`)
+  siteMeta.pushVariable('navSouth', `/gate/time/${xpos}/${parseInt(ypos)-1}/${uuid}`)
+  
+  const page_header = await replace('./private/header.html', siteMeta)
+  const page_nav = await replace('./private/gate/navigator.html', siteMeta)
+
+  const page_main = await replace('./private/gate/main.html', siteMeta)
+
+  let data = page_header + page_nav + page_main
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+
+  // testing
+  //res.status(200).send(inspection_block)
   // cleanup memory
   siteMeta = undefined
   uac = undefined
