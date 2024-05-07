@@ -391,6 +391,7 @@ class siteMetadata
         this.pushVariable(`blockTimestamp`, Inspection.block.mint.timestamp)
         this.pushVariable(`blockType`, Inspection.block.mint.blockType)
         this.pushVariable(`blockURL`, Inspection.block.link)
+        this.pushVariable(`ledgerPristine`, Inspection.ledger.pristine)
         this.pushVariable(`ledgerOwnerAcctType`, Inspection.ledger.ledgerOwnershipAccount.accountTypeStr)
         this.pushVariable(`ledgerOwnerLink`, '/user/'+ Inspection.ledger.ledgerOwnershipAccount.userUUID)
         this.pushVariable(`ledgerOwnerPubname`, Inspection.ledger.ledgerOwnershipAccount.publicName)

@@ -87,5 +87,14 @@ function initCell(blockUUID) {
     if (blockType == 5) blockCell.style.backgroundColor = '#ff000033'
     if (blockType == 6) blockCell.style.backgroundColor = '#2d2d2d'
 
+    var blockPristine = document.getElementById('Pristine'+blockUUID)
+    var blockIsPristine = document.getElementById('pristine'+blockUUID).innerHTML;
+
+    if (blockIsPristine == 'true') {
+        blockPristine.style.color = '#c29ebf54';
+    } else {
+        blockPristine.style.color = '#d41111af';
+    }
+
     console.log('Initialized',blockUUID,blockType)
 }
