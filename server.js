@@ -23,8 +23,8 @@
 //
 
 /*
-  TODO: Work on Page Navigator. (part 1 / 3 done, user funcs and map cell funcs next)
-  TODO: Make /contact, and /user/uuid.
+  TODO: Work on cell function buttons (make them smaller)
+  TODO: Make /contact
   NOTE: Reduce the number of database calls with a findAll function? but this
         current method is probably the fastest. Assuming the database is loaded
         into RAM instead of constantly making unnecessary calls to the file
@@ -36,7 +36,9 @@
 
   TODO: Block loading optimization! Might save the computer, and processing time!.
 
-  TODO: NV optimization! Compare with loaded blocks!.
+  TODO: Ledger Historical View
+
+  DONE: NV optimization! Compare with loaded blocks!.
 
   NOTE: Remember that changes to user attributes must be reflected in
         database as well as active login (loggedIn) class
@@ -340,6 +342,7 @@ class siteMetadata
         this.pushVariable(`blockTimestamp`, Inspection.block.mint.timestamp)
         this.pushVariable(`blockType`, Inspection.block.mint.blockType)
         this.pushVariable(`blockURL`, Inspection.block.link)
+        this.pushVariable(`ledgerPristine`, Inspection.ledger.pristine)
         this.pushVariable(`ledgerOwnerAcctType`, Inspection.ledger.ledgerOwnershipAccount.accountTypeStr)
         this.pushVariable(`ledgerOwnerLink`, '/user/'+ Inspection.ledger.ledgerOwnershipAccount.userUUID)
         this.pushVariable(`ledgerOwnerPubname`, Inspection.ledger.ledgerOwnershipAccount.publicName)
