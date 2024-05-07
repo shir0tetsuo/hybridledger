@@ -79,6 +79,12 @@ class Block
      * @param {hash} previousHash
      * @param {date} timestamp
      * @param {uuid} uuid
+     * 
+     * @function `getHash()` --> Returns `{string}` hash | not async
+     * @function `getValue()` --> Returns `{float}` value | not async
+     * @function `getDifficulty()` --> Returns `{number}` difficulty | not async
+     * @function `mint(difficulty)` --> minted++, nonce++ | not async
+     * @function `debug()` --> (void) console.log debugging | not async
     */
     constructor(index,
         position,

@@ -26,6 +26,27 @@ const SHA256 = require('crypto-js/sha256')
 const { v4: uuidv4 } = require('uuid');
 
 /**
+ * Produce 2 colors based on the UUID.
+ * 
+ * @param {string} uuid 
+ */
+function getUUIDColors(uuid)
+{
+    if (uuid == 0 || uuid == '0') { return ['#2d2d2d','#2d2d2d']}
+    let cA = uuid.split('-')[1].substring(0,2)
+    let cB = uuid.split('-')[1].substring(2,4)
+    let cC = uuid.split('-')[2].substring(0,2)
+    let cD = uuid.split('-')[2].substring(2,4)
+    let cE = uuid.split('-')[3].substring(0,2)
+    let cF = uuid.split('-')[3].substring(2,4)
+    
+    let colorA = `#${cA}${cB}${cC}`
+    let colorB = `#${cD}${cE}${cF}`
+
+    return [colorA, colorB]
+}
+
+/**
  * Use any `seed` string to find deterministic value in values
  * @param {string} seed 
  * @param {list} values 
@@ -66,5 +87,6 @@ function newUUID() {
 module.exports = {
     getDeterministicValue,
     getRandomInt,
-    newUUID
+    newUUID,
+    getUUIDColors
 }

@@ -351,6 +351,12 @@ class siteMetadata
         this.pushVariable(`ledgerOwnEmail`, Inspection.ledger.ledgerOwnershipAccount.userEmail)
         this.pushVariable(`blockMintable`, Inspection.authorization.canMint)
         this.pushVariable(`ledgerZone`, Inspection.ledger.xypos)
+        this.pushVariable(`channelA`, Inspection.colors.channelA)
+        this.pushVariable(`channelB`, Inspection.colors.channelB)
+        this.pushVariable(`channelC`, Inspection.colors.channelC)
+        this.pushVariable(`channelD`, Inspection.colors.channelD)
+        this.pushVariable(`channelE`, Inspection.colors.channelE)
+        this.pushVariable(`channelF`, Inspection.colors.channelF)
 
         let Element = await replace('./private/gate/blockElement.html',this)
 
@@ -403,6 +409,12 @@ class siteMetadata
         this.pushVariable(`ledgerOwnEmail`, Inspection.ledger.ledgerOwnershipAccount.userEmail)
         this.pushVariable(`blockMintable`, Inspection.authorization.canMint)
         this.pushVariable(`ledgerZone`, Inspection.ledger.xypos)
+        this.pushVariable(`channelA`, Inspection.colors.channelA)
+        this.pushVariable(`channelB`, Inspection.colors.channelB)
+        this.pushVariable(`channelC`, Inspection.colors.channelC)
+        this.pushVariable(`channelD`, Inspection.colors.channelD)
+        this.pushVariable(`channelE`, Inspection.colors.channelE)
+        this.pushVariable(`channelF`, Inspection.colors.channelF)
 
         let Element = await replace('./private/gate/blockElement.html',this)
 
@@ -568,6 +580,17 @@ class siteMetadata
       //if (block.data.length > 70) { BlockData = block.data.substring(0,70) + '<level>...</level>' } else { BlockData = block.data }
     }
 
+    let blockColors = sysmath.getUUIDColors(block.uuid)
+    let userColors = sysmath.getUUIDColors(this.uac.userUUID)
+    let ledgerColors = sysmath.getUUIDColors(HL.lastBlock.ownership)
+
+    let channelA = userColors[0];
+    let channelB = userColors[1];
+    let channelC = blockColors[0];
+    let channelD = blockColors[1];
+    let channelE = ledgerColors[0];
+    let channelF = ledgerColors[1];
+
     var Inspection = {
       ledger: {
         size: HL.ledger.length,
@@ -620,6 +643,15 @@ class siteMetadata
         canMint: await Users.checkAuthorization(HL, this.uac),
         ownershipMatchesAccountUUID: blkOwnIsUAC,
         //netValue: await this.uac.netValue(),
+      },
+
+      colors: {
+        channelA: channelA,
+        channelB: channelB,
+        channelC: channelC,
+        channelD: channelD,
+        channelE: channelE,
+        channelF: channelF
       }
     }
     return Inspection
