@@ -1011,6 +1011,18 @@ server.get('/user/:uuid', async(req, res) => {
   siteMeta.pushVariable('user_created', user.created)
   siteMeta.pushVariable('user_publicname', user.publicName)
   siteMeta.pushVariable('user_accountType', accountTypes[user.accountType])
+  
+  let lastblock = await user.getUserLastBlock()
+  
+  let lblink;
+  if (!lastblock || lastblock == false) {
+    lblink = '#'
+  } else {
+    lblink = `/b/${lastblock.uuid}`
+  }
+  
+
+  siteMeta.pushVariable('user_lastblock_link', lblink)
 
   let page_header = await replace('./private/header.html',siteMeta)
   let page_nav = await replace('./private/gate/navigator.html',siteMeta)

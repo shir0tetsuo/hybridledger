@@ -62,11 +62,19 @@
                     </span>
                 </div>
                 <div style="padding: 5px; left: 10px;"><span>&nbsp;Last Block</span></div>
+                <div style="padding: 10px;">
+                    ${blk_data}
+                </div>
                 <div style="margin: auto; text-align: center; width: 155px; position: relative; z-index: 1;">
                     <img src="${blk_qr}">
                     
                     <a title="View JSON" style="font-size:larger;" href="${DISCORDSITENAME}hl/${ledger_position}/${blk_idx}">${ledger_position}</a>
-                    <br><gold>index[${blk_idx}/${ledger_maxidx}]</gold><br><level>${blk_typeStr}</level>
+                    <br><gold>index[${blk_idx}/${ledger_maxidx}]</gold><br><level>${blk_typeStr}</level><br><br>
+                    <div style="font-size: xx-small;">
+                        ${blk_own_emoji} <level>${blk_own_accountTypeStr} ${blk_own_pubName}</level> (@${blk_own_userName})<br>
+                        U-${blk_own_userUUID}
+                        <br>${blk_own_email}
+                    </div>
                 </div>
             </div>
         </blockquote>
@@ -94,6 +102,7 @@
                     success: function(data){
                         document.getElementById('bounceLoader').style.display = 'none'
                         alert("Block minted successfully!");
+                        location.reload()
                     },
                     error: function(data){
                         document.getElementById('bounceLoader').style.display = 'none'
