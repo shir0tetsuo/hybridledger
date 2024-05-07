@@ -581,7 +581,7 @@ class siteMetadata
     }
 
     let blockColors = sysmath.getUUIDColors(block.uuid)
-    let userColors = sysmath.getUUIDColors(this.uac.userUUID)
+    let userColors = sysmath.getUUIDColors(block.ownership)
     let ledgerColors = sysmath.getUUIDColors(HL.lastBlock.ownership)
 
     let channelA = userColors[0];
