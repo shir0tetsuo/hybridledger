@@ -297,6 +297,7 @@ class siteMetadata
     this.pushVariable('blk_own_created', Inspection.block.ownershipAccount.created)
     this.pushVariable('blk_own_email', Inspection.block.ownershipAccount.userEmail)
     this.pushVariable('uac_can_mint', Inspection.authorization.canMint)
+    this.pushVariable('uac_account_type', Inspection.authorization.uac.accountType)
   }
 
   /**
@@ -779,7 +780,7 @@ server.get('/gate', async(req, res) => {
 /*
 
   #################################################################################
-    /gate/time/:xpos/:ypos/:uuid (Block Timeline Inspection)
+    /gate/time/:xpos/:ypos/:uuid (Block Timeline Inspection/Retrospection)
   #################################################################################
 
 */
@@ -825,6 +826,13 @@ server.get('/gate/time/:xpos/:ypos/:uuid', async(req, res) => {
   uac = undefined
 })
 
+/*
+
+  #################################################################################
+    /gate/last/:xpos/:ypos (Return map matrix)
+  #################################################################################
+
+*/
 server.get('/gate/last/:xpos/:ypos', async(req, res) => {
 
   const { xpos, ypos } = req.params;
@@ -861,6 +869,65 @@ server.get('/gate/last/:xpos/:ypos', async(req, res) => {
 /*
 
   #################################################################################
+    /fix/:address (System Block Fixer)
+  #################################################################################
+
+  NOTE: This is a simple clean-up utility to re-hash blocks.
+        Empty blocks don't need to be fixed.
+
+*/
+server.get('/fix/:address', async(req, res) => {
+
+  const { address } = req.params;
+
+  var siteMeta = new siteMetadata()
+  var uac = await siteMeta.UACHandler(req)
+
+  if (!uac.accountType>=2){return res.status(401).send({unauthorized: 'Account not authorized.'})}
+
+  if (!address||address==undefined){return res.status(404).send({error: 'address unknown'})}
+  
+  var HL = await HybridLedgers.callHybridLedger(address)
+
+  //if (HL.checkPristine() == true) {return res.status(200).send({ok: 'address is fine'})}
+
+  console.log(`Fixing ${HL.position}`);
+
+  var previousHash = '0';
+  for (let ib in HL.ledger) {
+
+    var block = HL.ledger[ib];
+
+    //if (ib != 0) { block.previousHash = previousHash; }
+
+    // minted++ & nonce++
+    block.previousHash = previousHash
+    if (block.blockType == 0) { await block.mint(1) }
+    if (block.blockType == 1) { await block.mint(2) }
+    if (block.blockType == 2) { await block.mint(4) }
+    if (block.blockType == 3) { await block.mint(3) }
+    if (block.blockType == 4) { await block.mint(4) }
+    if (block.blockType == 5) { await block.mint(3) }
+    if (block.blockType == 6) { await block.mint(4) }
+    previousHash = block.getHash()
+
+    block.debug()
+
+    if (block.blockType != 0) {
+      db.Ledgers.update({minted: block.minted, nonce: block.nonce, previousHash: block.previousHash}, { where: { uuid: block.uuid }})
+    }
+  }
+  
+  res.status(200).send('OK'); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
+})
+
+/*
+
+  #################################################################################
     /gate/minttime (Get uac time left to mint)
   #################################################################################
 
@@ -883,7 +950,9 @@ server.post('/gate/minttime', async(req, res) => {
     })
   }
 
-  
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
 })
 
 /*
@@ -946,6 +1015,10 @@ server.get('/user/:uuid', async(req, res) => {
   let data = page_header + page_nav + page_main
 
   res.status(200).send(data)
+
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
 })
 
 /*
@@ -1065,6 +1138,9 @@ server.get('/mint/:address', async (req, res) => {
 
   res.status(200).send(data)
 
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
 })
 
 /*
@@ -1129,6 +1205,9 @@ server.post('/mint/:address', async (req, res) => {
 
   res.status(200).send({response: "OK!", navigate: Inspection.ledger.area})
 
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
 })
 
 /*
@@ -1150,8 +1229,11 @@ server.get('/hl/:address/:index', async (req, res) => {
 
   let data = await siteMeta.LedgerHandler(address, index);
 
-  return res.status(200).send({data}); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+  res.status(200).send({data}); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
 })
 
 /*
@@ -1210,6 +1292,8 @@ server.get('/b/:address/:index', async(req, res) => {
 
   res.status(301).send(data)
 
+  // cleanup memory
+  siteMeta = undefined
 })
 
 /*
@@ -1249,6 +1333,10 @@ server.get('/b/:uuid', async (req, res) => {
 
   res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
+
 })
 
 /*
@@ -1268,8 +1356,11 @@ server.get('/hl/:address', async (req, res) => {
 
   let data = await siteMeta.LedgerHandler(address, 0, true);
 
-  return res.status(200).send({data}); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
-
+  res.status(200).send({data}); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+  
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
 })
 
 /*

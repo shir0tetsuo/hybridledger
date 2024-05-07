@@ -11,6 +11,7 @@
                         
                         <a title="View JSON" style="font-size:larger;" href="${DISCORDSITENAME}hl/${ledger_position}/${blk_idx}">${ledger_position}</a>
                         <br><gold>index[${blk_idx}/${ledger_maxidx}]</gold><br><level>${blk_typeStr}</level>
+                        <span style="display: none;" id="fixbutton"><a href="/fix/${ledger_position}">Resolve Bad Blocks</a></span>
                     </div>
                 </div>
             </blockquote>
@@ -43,6 +44,7 @@
                     <a title="Go to Genesis Block" href="${ledger_position}/0">Genesis</a>
                     <span id="genesisTS">- --:--:--</span> ago<br>
                     <level id="genesisTSStr">--- --- ---- -- --- --- -</level>
+                    
                 </div>
             </blockquote>
 
@@ -72,9 +74,9 @@
                     </div>
                 </div>
                 <div style="font-size: smaller; padding: 5px;">
-                    <span title="Value of the Ledger in total.">VALUE: ${ledger_value}</span>
-                    <br><span title="Ledger Data OK" style="font-size: smaller;">PRISTINE: ${ledger_pristine}</span>
                     
+                    <span title="Value of the Ledger in total.">VALUE: ${ledger_value}</span>
+                    <br><span title="Ledger Data OK" style="font-size: smaller;">PRISTINE: ${ledger_pristine}</span> 
                     
                 </div>
             </blockquote>
@@ -142,16 +144,20 @@
 
         <!-- ts -> tick, inits -->
         <div style="display: none;">
-            <span id="latestTSinit" style="display: none;">${ledger_lastts}</span>
-            <span id="nextTSinit" style="display: none;">${ledger_nextts}</span>
-            <span id="blockTSinit" style="display: none;">${blk_ts}</span>
-            <span id="prevTSinit" style="display: none;">${ledger_prevts}</span>
-            <span id="genesisTSinit" style="display: none;">${ledger_genesists}</span>
+            <span id="latestTSinit">${ledger_lastts}</span>
+            <span id="nextTSinit">${ledger_nextts}</span>
+            <span id="blockTSinit">${blk_ts}</span>
+            <span id="prevTSinit">${ledger_prevts}</span>
+            <span id="genesisTSinit">${ledger_genesists}</span>
     
-            <span id="pvBlockLinkInit" style="display: none;" >${ledger_prevlink}</span>
-            <span id="nxBlockLinkInit" style="display: none;" >${ledger_nextlink}</span>
+            <span id="pvBlockLinkInit">${ledger_prevlink}</span>
+            <span id="nxBlockLinkInit">${ledger_nextlink}</span>
+
+            <span id="blkPristine">${ledger_pristine}</span>
 
             <span id="userAuth">${uac_can_mint}</span>
+
+            <span id="userLevel">${uac_account_type}</span>
         </div>
         
         

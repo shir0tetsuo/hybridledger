@@ -1,3 +1,5 @@
+const user = require("../module/user")
+
 function Hexadecimal(toHex){
     var toHex = parseInt(toHex)
     return toHex.toString(16)
@@ -31,6 +33,10 @@ function initialize(){
     toggle('backToGrid')
 
     let canMint = document.getElementById('userAuth').innerHTML;
+    let isPristine = document.getElementById('blkPristine').innerHTML;
+    let userLevel = document.getElementById('userLevel').innerHTML;
+
+    if (isPristine == 'false' && parseInt(userLevel)>=2) { document.getElementById('fixbutton').style.display='block' }
 
     if (canMint == 'true') toggle('userCanMint')
 

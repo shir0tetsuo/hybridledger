@@ -146,15 +146,15 @@ class Block
      * @returns {string} hash
      */
     getHash(){
-        return SHA256(this.index+
-            this.position+
-            this.minted+
-            this.ownership+
-            this.blockType+
-            this.timestamp+
-            this.previousHash+
-            this.data+
-            this.nonce).toString();
+        return SHA256(String(this.index)+
+            String(this.position)+
+            String(this.minted)+
+            String(this.ownership)+
+            String(this.blockType)+
+            String(this.timestamp)+
+            String(this.previousHash)+
+            String(this.data)+
+            String(this.nonce)).toString();
     }
 
 
@@ -172,8 +172,10 @@ class Block
         // (now - this.timestamp) => minted value increases over time
         var agingValue = ((new Date() - new Date(this.timestamp))/1050000000)
 
-        var mintValue = Math.round((((this.nonce/1000000 + (0.0002 *(this.getDifficulty() - 1))) + (0.005 - (0.001*(this.minted-1)) *this.getDifficulty())) + agingValue) * 1000000) / 1000000
+        var mintValue = Math.round(((((this.nonce/1000000)/this.minted + (0.0002 *(this.getDifficulty() - 1))) + (0.005 - (0.001*(this.minted-1)) *this.getDifficulty())) + agingValue) * 1000000) / 1000000
         
+        //var mintValue = Math.round( (this.nonce/1000000)/this.minted )
+
         // value can never be less than zero
         if (mintValue < 0) { mintValue = 0 }
 
@@ -269,6 +271,7 @@ class Block
         console.log('UUID:', this.uuid)
         console.log('NONCE:', this.nonce)
         console.log('HASH:', this.hash)
+        console.log('PVHASH:', this.previousHash)
         console.log('VALUE:', this.getValue())
         console.log('DIFFICULTY:', this.getDifficulty())
     }

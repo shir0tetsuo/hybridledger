@@ -10,7 +10,7 @@
                         <option value="0" disabled>Empty</option>
                         <option value="1" disabled>Genesis</option>
                         <option value="2">Minted</option>
-                        <option value="3">Transaction</option>
+                        <option value="3" disabled>Transaction</option>
                         <option value="4" disabled>Acquirement</option>
                         <option value="5" disabled>Locked</option>
                         <option value="6">Obfuscated</option>
@@ -48,10 +48,38 @@
             </blockquote>
             <div id="bounceLoader" style="display: none; float: inherit;" class="bouncing-loader"><div></div><div></div><div></div></div>
 
+            <div style="display: none;">
+                <span id="userLevel">${uac_account_type}</span>
+            </div>
+
         </div>
+
+        <blockquote>
+            <div class="loginbox">
+                <div style="z-index: 2; position: relative; top: 3px; float: left;">
+                    <span class="material-symbols-outlined">
+                        &nbsp;update
+                    </span>
+                </div>
+                <div style="padding: 5px; left: 10px;"><span>&nbsp;Last Block</span></div>
+                <div style="margin: auto; text-align: center; width: 155px; position: relative; z-index: 1;">
+                    <img src="${blk_qr}">
+                    
+                    <a title="View JSON" style="font-size:larger;" href="${DISCORDSITENAME}hl/${ledger_position}/${blk_idx}">${ledger_position}</a>
+                    <br><gold>index[${blk_idx}/${ledger_maxidx}]</gold><br><level>${blk_typeStr}</level>
+                </div>
+            </div>
+        </blockquote>
         <script type="text/javascript">
             toggle('backToGrid')
             getTxbLength('blockData','txbl')
+
+            if (parseInt(document.getElementById('userLevel').innerHTML) >=2) {
+                // undisable option 5
+                var select = document.getElementById("blockType");
+                var option = select.options[5];
+                option.disabled = false;
+            }
 
             //jQuery POST request to /mint/
             $("#submit").click(function(){
