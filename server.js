@@ -740,6 +740,15 @@ server.get('/', async(req, res) => {
   // get user account and variables from cookies
   var uac = await siteMeta.UACHandler(req)
 
+  // get the client's browser information
+    // get the client's browser information
+  var userAgent = req.headers['user-agent']
+  var isMobile = userAgent.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)
+  siteMeta.pushVariable('isMobile', isMobile)
+
+  // get the client's ip address
+  var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
+
   //uac.debug()
   
   const page_header = await replace('./private/header.html', siteMeta)
@@ -748,7 +757,7 @@ server.get('/', async(req, res) => {
   let data = page_header + page_main
  
   // send res status 200 with data
-  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName} 🌐 ${ip}`)
 
   // cleanup memory
   siteMeta = undefined
@@ -1378,6 +1387,51 @@ server.get('/b/:uuid', async (req, res) => {
   let page_main = await replace('./private/gate/block.html', siteMeta)
 
   let data = page_header + page_nav + page_main
+
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
+
+})
+
+/*
+
+  #################################################################################
+    /c/:uuid (Get block cert information by UUID)
+  #################################################################################
+
+*/
+server.get('/c/:uuid', async (req, res) => {
+
+  const { uuid } = req.params;
+
+  var siteMeta = new siteMetadata()
+
+  siteMeta.pushVariable('SITENAME', 'Block')
+
+  var uac = await siteMeta.UACHandler(req)
+
+  let Inspection;
+  let dbBlock = await db.Ledgers.findOne({where: { uuid: uuid }})
+  if (!dbBlock || dbBlock == undefined) {
+    Inspection = await siteMeta.LedgerHandler('0,0',0,false)
+  } else {
+    Inspection = await siteMeta.LedgerHandler(dbBlock.position,dbBlock.index,false)
+  }
+
+  siteMeta.pushVariable('TITLE',process.env.SITE + ' B-' + Inspection.block.mint.uuid)
+  siteMeta.pushVariable('DISCORDSITEBAR', `Ledger ${Inspection.ledger.position} #${Inspection.block.mint.index} (${Inspection.block.mint.uuid})`)
+  siteMeta.pushBlockVariables(Inspection)
+
+  //let page_header = await replace('./private/header.html', siteMeta)
+  //let page_nav = await replace('./private/gate/navigator.html', siteMeta)
+  //let page_main = await replace('./private/gate/block.html', siteMeta)
+
+  let data = {
+    'cert': Inspection
+  }
 
   res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 
