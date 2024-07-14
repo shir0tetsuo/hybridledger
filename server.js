@@ -358,6 +358,12 @@ class siteMetadata
         this.pushVariable(`channelE`, Inspection.colors.channelE)
         this.pushVariable(`channelF`, Inspection.colors.channelF)
 
+        if (Inspection.ledger.size >= 2) {
+          this.pushVariable(`blockHistogram`, 'true')
+        } else {
+          this.pushVariable(`blockHistogram`, 'false')
+        }
+
         let Element = await replace('./private/gate/blockElement.html',this)
 
         this.pushVariable(`cell${cellY}_${cellX}`, Element)
@@ -415,6 +421,12 @@ class siteMetadata
         this.pushVariable(`channelD`, Inspection.colors.channelD)
         this.pushVariable(`channelE`, Inspection.colors.channelE)
         this.pushVariable(`channelF`, Inspection.colors.channelF)
+
+        if (Inspection.ledger.size >= 2) {
+          this.pushVariable(`blockHistogram`, 'true')
+        } else {
+          this.pushVariable(`blockHistogram`, 'false')
+        }
 
         let Element = await replace('./private/gate/blockElement.html',this)
 
@@ -1387,6 +1399,84 @@ server.get('/b/:uuid', async (req, res) => {
   let page_main = await replace('./private/gate/block.html', siteMeta)
 
   let data = page_header + page_nav + page_main
+
+  res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
+
+  // cleanup memory
+  siteMeta = undefined
+  uac = undefined
+
+})
+
+
+/*
+
+  #################################################################################
+    /history/:uuid (Get block information by UUID)
+  #################################################################################
+
+*/
+server.get('/history/:uuid', async (req, res) => {
+
+  const { uuid } = req.params;
+
+  var siteMeta = new siteMetadata()
+
+  siteMeta.pushVariable('SITENAME', 'History')
+
+  var uac = await siteMeta.UACHandler(req)
+
+  // => Get Inspection Block
+  let Inspection;
+  let dbBlock = await db.Ledgers.findOne({where: { uuid: uuid }})
+  if (!dbBlock || dbBlock == undefined) {
+    Inspection = await siteMeta.LedgerHandler('0,0',0,false)
+  } else {
+    Inspection = await siteMeta.LedgerHandler(dbBlock.position,dbBlock.index,false)
+  }
+
+  // block => Entire Ledger (HL)
+  let HL = await HybridLedgers.callHybridLedger(dbBlock.position)
+  let size = HL.ledger.length
+
+  //await siteMeta.Histogram(HL)
+
+  var serve = "<br><br>"
+  serve += `<span>Ledger ${HL.position}, ${Inspection.ledger.ledgerOwnershipAccount.emoji} @${Inspection.ledger.ledgerOwnershipAccount.userName}</span><br>`
+  var hiddenlayer = `\n<html><body><div style="display: none;">\n`
+  var rotators = `\n<script type="text/javascript">\n`
+  for (var i = 0; i < size; i++) {
+    Hb = HL.ledger[i]
+
+    // visible
+    if (Hb.uuid == dbBlock.uuid) {
+      serve += `<span style="padding-left: 5px; padding-bottom: 2px; padding-top: 2px; border-left: 3px solid yellow;">#${Hb.index} <a class="phasedBlue" style="color: #6f6f6f;" href="/b/${Hb.uuid}">${Hb.uuid}</a> +<b><span id="TS${Hb.uuid}">--:--</span></b>/now, @ <span id="DT${Hb.uuid}">--:--</span></span>`
+    }
+    else {
+      serve += `<span style="padding-left: 5px; padding-bottom: 2px; padding-top: 2px; border-left: 3px solid gray;">#${Hb.index} <a class="phasedYel" href="/b/${Hb.uuid}">${Hb.uuid}</a> +<b><span id="TS${Hb.uuid}">--:--</span></b>/now, @ <span id="DT${Hb.uuid}">--:--</span>`
+    }
+
+    // math
+    rotators += `\nrotateTS('TS${Hb.uuid}',parseInt(document.getElementById('T${Hb.uuid}').innerHTML))`
+    rotators += `\ndocument.getElementById('DT${Hb.uuid}').innerHTML = getTimeString(parseInt(document.getElementById('T${Hb.uuid}').innerHTML))`
+    
+    // data layer
+    hiddenlayer += `\n<span id="T${Hb.uuid}">${Hb.timestamp}</span>`
+    
+    // visible
+    serve += '<br>'
+  }
+
+  hiddenlayer += `\n</div></body></html>`
+  rotators += `</script>`
+
+  siteMeta.pushVariable('TITLE',process.env.SITE + ' History of B-' + Inspection.block.mint.uuid)
+  siteMeta.pushVariable('DISCORDSITEBAR', `Ledger ${Inspection.ledger.position} Historical View`)
+
+  let page_header = await replace('./private/header.html', siteMeta)
+  let page_nav = await replace('./private/gate/navigator.html', siteMeta)
+
+  let data = page_header + page_nav + serve + hiddenlayer + rotators
 
   res.status(200).send(data); console.log(`🦾 200 ${req.url} => ${uac.userName}`)
 

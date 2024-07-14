@@ -1,5 +1,3 @@
-const user = require("../module/user")
-
 function Hexadecimal(toHex){
     var toHex = parseInt(toHex)
     return toHex.toString(16)
@@ -75,6 +73,12 @@ function initCell(blockUUID) {
     var blockType = parseInt(document.getElementById('type'+blockUUID).innerHTML);
 
     var mintable = document.getElementById('mint'+blockUUID).innerHTML;
+
+    var histogram = document.getElementById('histogram'+blockUUID).innerHTML;
+
+    if (histogram == 'true') {
+        toggle('canHistogram'+blockUUID)
+    }
 
     if (mintable == 'true') {
         toggle('canMint'+blockUUID)

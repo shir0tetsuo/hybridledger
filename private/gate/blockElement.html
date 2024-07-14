@@ -54,6 +54,17 @@
                 </a>
             </div>
         </div>
+
+        <!-- History -->
+        <div style="background-image: url('/static/img/about-bg.gif');">
+            <div style="font-size: 34px; display: none; background-color: rgba(78, 62, 122, 0.565);" id="canHistogram${blockUUID}">
+                <a class="phasedBlue" href="/history/${blockUUID}" rel="NOFOLLOW">
+                    <span style="font-size:50px;" class="material-symbols-outlined">
+                        view_day
+                    </span>
+                </a>
+            </div>
+        </div>
         
         <!-- ==> /gate/time/:xpos/:ypos/:blockuuid 
              to enable user to retroactively inspect blocks at the time of its creation -->
@@ -65,15 +76,13 @@
                     </span>
                 </a>
                 <!--
-                <a class="phasedYel" href="/history/${ledgerPosition}">
+                <a class="phasedYel" href="/history/${blockUUID}">
                     <span style="font-size:50px;" class="material-symbols-outlined">
                         checkbook
                     </span>
                 </a>-->
             </div>
         </div>
-
-        
 
         <!-- ==> History button -->
 
@@ -85,6 +94,7 @@
     <span id="type${blockUUID}">${blockType}</span>
     <span id="mint${blockUUID}">${blockMintable}</span>
     <span id="pristine${blockUUID}">${ledgerPristine}</span>
+    <span id="histogram${blockUUID}">${blockHistogram}</span>
 </div>
 
 <script type="text/javascript">
