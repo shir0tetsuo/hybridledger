@@ -1435,6 +1435,8 @@ server.get('/history/:uuid', async (req, res) => {
     Inspection = await siteMeta.LedgerHandler(dbBlock.position,dbBlock.index,false)
   }
 
+  let zone = Inspection.ledger.xypos
+
   // block => Entire Ledger (HL)
   let HL = await HybridLedgers.callHybridLedger(dbBlock.position)
   let size = HL.ledger.length
@@ -1442,18 +1444,27 @@ server.get('/history/:uuid', async (req, res) => {
   //await siteMeta.Histogram(HL)
 
   var serve = "<br><br>"
-  serve += `<span>Ledger ${HL.position}, ${Inspection.ledger.ledgerOwnershipAccount.emoji} @${Inspection.ledger.ledgerOwnershipAccount.userName}</span><br>`
+  serve += `<span>Ledger ${HL.position}, <a href="/gate/last/${zone}">Zone ${zone}</a>, ${Inspection.ledger.ledgerOwnershipAccount.emoji} <span title="${Inspection.ledger.ledgerOwnership}">@${Inspection.ledger.ledgerOwnershipAccount.userName}</span></span><br>`
   var hiddenlayer = `\n<html><body><div style="display: none;">\n`
   var rotators = `\n<script type="text/javascript">\n`
   for (var i = 0; i < size; i++) {
     Hb = HL.ledger[i]
 
+    let InfoBlock;
+    if (Hb.blockType == 6 && Hb.ownership != uac.userUUID) {
+      InfoBlock = `<span style="font-size: smaller">${Hb.ownership}</span><br>Secret`
+    } else if (Hb.blockType == 1) {
+      InfoBlock = `Genesis`
+    } else {
+      InfoBlock = `<span style="font-size: smaller">${Hb.ownership}</span><br>${Hb.data}`
+    }
+
     // visible
     if (Hb.uuid == dbBlock.uuid) {
-      serve += `<span style="padding-left: 5px; padding-bottom: 2px; padding-top: 2px; border-left: 3px solid yellow;">#${Hb.index} <a class="phasedBlue" style="color: #6f6f6f;" href="/b/${Hb.uuid}">${Hb.uuid}</a> +<b><span id="TS${Hb.uuid}">--:--</span></b>/now, @ <span id="DT${Hb.uuid}">--:--</span></span>`
+      serve += `<span style="padding-left: 5px; padding-bottom: 2px; padding-top: 2px; border-left: 3px solid yellow;"><div class="extrusionbase"><a class="phasedYel" title="Retroactive View" href="/gate/time/${zone}/${Hb.uuid}">#${Hb.index}</a> <a class="phasedBlue" style="color: #6f6f6f;" href="/b/${Hb.uuid}">${Hb.uuid}</a><div class="extrude">${InfoBlock}</div></div> +<b><span id="TS${Hb.uuid}">--:--</span></b>/now, @ <span id="DT${Hb.uuid}">--:--</span></span>`
     }
     else {
-      serve += `<span style="padding-left: 5px; padding-bottom: 2px; padding-top: 2px; border-left: 3px solid gray;">#${Hb.index} <a class="phasedYel" href="/b/${Hb.uuid}">${Hb.uuid}</a> +<b><span id="TS${Hb.uuid}">--:--</span></b>/now, @ <span id="DT${Hb.uuid}">--:--</span>`
+      serve += `<span style="padding-left: 5px; padding-bottom: 2px; padding-top: 2px; border-left: 3px solid gray;"><div class="extrusionbase"><a class="phasedYel" title="Retroactive View" href="/gate/time/${zone}/${Hb.uuid}">#${Hb.index}</a> <a class="phasedYel" href="/b/${Hb.uuid}">${Hb.uuid}</a><div class="extrude">${InfoBlock}</div></div> +<b><span id="TS${Hb.uuid}">--:--</span></b>/now, @ <span id="DT${Hb.uuid}">--:--</span>`
     }
 
     // math
