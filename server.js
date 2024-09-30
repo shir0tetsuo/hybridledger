@@ -755,8 +755,11 @@ server.get('/', async(req, res) => {
   // get the client's browser information
     // get the client's browser information
   var userAgent = req.headers['user-agent']
-  var isMobile = userAgent.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)
-  siteMeta.pushVariable('isMobile', isMobile)
+
+  // check whether or not mobile device exists in 
+
+  //var isMobile = userAgent.match(/Android|BlackBerry|iPhone|iPad|iPod|Opera Mini|IEMobile/i)
+  siteMeta.pushVariable('isMobile', userAgent)
 
   // get the client's ip address
   var ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
